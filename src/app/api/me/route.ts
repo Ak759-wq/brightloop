@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { authMode, getSession } from "@/server/auth";
-import { backendMode, getStore } from "@/server/store";
+import { backendDiagnostic, backendMode, getStore } from "@/server/store";
 import { businessToday } from "@/server/services/core";
 import type { Organization } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  const diagnostic = backendDiagnostic();
+  if (diagnostic && process.env.VERCEL === "1") {
+    return NextResponse.json({
+      session: null,
+      org: null,
+      modes: { auth: authMode(), backend: backendMode(), email: !!process.env.RESEND_API_KEY, razorpay: !!process.env.RAZORPAY_KEY_ID, llm: !!(process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY) },
+      diagnostic,
+    }, { status: 503 });
+  }
   const session = await getSession(req);
   const store = await getStore();
   const org = session ? await store.get<Organization>("organizations", session.orgId) : null;

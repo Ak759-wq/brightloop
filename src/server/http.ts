@@ -3,7 +3,7 @@ import { ZodError } from "zod";
 import { canDo, type ActionName } from "@/lib/permissions";
 import type { Role } from "@/lib/types";
 import { getSession, type Session } from "./auth";
-import { AlreadyExistsError } from "./store";
+import { AlreadyExistsError, BackendConfigError } from "./store";
 
 export class HttpError extends Error {
   constructor(public status: number, message: string, public details?: unknown) {
@@ -17,6 +17,7 @@ export const notFound = (what = "Record") => new HttpError(404, `${what} not fou
 
 export function toResponse(e: unknown) {
   if (e instanceof HttpError) return NextResponse.json({ error: e.message, details: e.details }, { status: e.status });
+  if (e instanceof BackendConfigError) return NextResponse.json({ error: e.message, code: "BACKEND_NOT_CONFIGURED" }, { status: 503 });
   if (e instanceof ZodError) {
     const fields: Record<string, string> = {};
     e.issues.forEach((i) => (fields[i.path.join(".") || "_"] ??= i.message));

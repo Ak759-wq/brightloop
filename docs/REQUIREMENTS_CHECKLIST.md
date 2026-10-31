@@ -19,7 +19,7 @@ Verification environment: local auth + local JSON store build. Firebase Auth/Fir
 | Variants with price deltas (Odoo +₹560) | Tested | unit P-01, integration ₹1,860, smoke preview |
 | Plan: price, daily/weekly/monthly/yearly, min quantity, available dates | Verified | Plans page; unit D-*, P-08; smoke min-qty |
 | Auto-close vs closable / pausable / renewable per plan | Tested | unit B-05, B-06, L-03; runner auto-close |
-| Quotation templates valid N days → subscription | Implemented | Quotations page; expiry blocks confirm (not in automated tests) |
+| Quotation templates valid N days → subscription | Tested | Quotations page; server-side expiry blocks confirmation, including modified client dates |
 | Subscription number, customer, plan, start, expiry, payment terms, lines with product/qty/unit price/taxes/amount | Verified | subscription detail + invoice lines; SUB-000123 sequence |
 | Draft → Quotation → Confirmed → Active → Closed visible to the team | Verified | unit L-*, smoke transitions, stepper |
 | Invoices created automatically from subscriptions with customer details, lines, taxes, totals | Verified | runner + activation; integration + smoke exact totals |
@@ -31,7 +31,7 @@ Verification environment: local auth + local JSON store build. Firebase Auth/Fir
 | Payments with method, amount, date, note against invoice | Verified | smoke partial + overpayment guard |
 | See paid vs outstanding; chase overdue | Verified | invoices tabs/KPIs; overdue derivation unit Y-03; runner marks overdue |
 | Finance lead view: active subs, revenue, payments, overdue with filters + summary | Verified | Overview + Analytics + filters (screenshots) |
-| Thousands of subscriptions, pages < 2 s | Tested | bulk seed 3,000; integration analytics < 2 s; smoke list latency (local store). Firestore latency not measured. |
+| Thousands of subscriptions, pages < 2 s | In progress | Pagination and indexes are implemented; local integration measures analytics under 2 s on 300 seeded subscriptions. A hosted Firestore measurement with 3,000 subscriptions is still required. |
 
 ## Extended scope
 | Feature | Status | Notes |
@@ -60,7 +60,7 @@ Verification environment: local auth + local JSON store build. Firebase Auth/Fir
 | Customer portal (8 pages) | Verified | screenshots; smoke self-subscribe & pay |
 | Pause / resume / renew / cancel with reason + retention offer | Verified | smoke pause/resume/close; retention via UI |
 | Version history + audit log | Verified | smoke ≥ 6 versions; Audit Logs page |
-| Invoice preview / print / PDF / send (logged when no email provider) | Implemented | screenshot review; PDF generation not automated |
+| Invoice preview / print / PDF / send | Tested | Resend is used when configured; otherwise send records a warning in-app notification and leaves `sentAt` unset. PDF generation is not automated. |
 | Usage events + credit wallet + ledger, 20% low-balance alert, block/overage | Tested | unit W-*; integration idempotency |
 | Analytics: MRR/ARR, revenue trend, receivables ageing, revenue bridge, estimates labelled, definitions | Verified | screenshots |
 | AI assistant: whitelisted, permission-aware tools; deterministic parser; optional LLM; no invented numbers | Verified | smoke (tool routing + customer refusal); LLM path untested without key |
@@ -68,11 +68,11 @@ Verification environment: local auth + local JSON store build. Firebase Auth/Fir
 | Design system (sidebar, KPI cards, tables w/ search/filters/server cursor pagination, skeletons, empty states, toasts, modals, confirm dialogs, notification center, breadcrumbs, responsive, focus states) | Verified | screenshots desktop + mobile; see UI_AUDIT.md |
 | Seed script incl. ~3,000 bulk subscriptions | Tested | integration seeds 300 bulk; `npm run seed:bulk` (local) |
 | Firebase Auth email/password in the app | Implemented | client SDK + server ID-token verification; demo accounts auto-provisioned on first login |
-| Firestore persistence via firebase-admin | Implemented | requires `FIREBASE_SERVICE_ACCOUNT_JSON` (not provided yet) |
+| Firestore persistence via firebase-admin | Tested (configuration guard) | requires a valid `FIREBASE_SERVICE_ACCOUNT_JSON` matching `NEXT_PUBLIC_FIREBASE_PROJECT_ID`; hosted production refuses local JSON fallback and returns a diagnostic when missing or invalid |
 
 ## Known gaps / deliberate deviations
 - `quotations` / `quotation_items` / `subscription_items` / `invoice_items` / `plan_items` are not separate collections: quotations are subscriptions in draft/quotation status, and items are embedded arrays (documented in ER_DIAGRAM.md).
 - Dunning "retries" send reminders and schedule the next step; they cannot auto-charge because the simulator has no stored payment method.
 - MRR trend is reconstructed at current prices (labelled estimate) — no daily MRR snapshots yet.
-- No Firestore-emulator rule tests; no browser interaction tests (screenshots only).
+- No Firestore-emulator rule tests; no browser interaction tests (screenshots only); no hosted Firestore performance measurement yet.
 - Firebase mode with web config but no service account keeps data in the local store, which is not durable on serverless hosts.

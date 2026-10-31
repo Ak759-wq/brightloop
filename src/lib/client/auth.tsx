@@ -25,7 +25,7 @@ export interface OrgInfo {
 }
 export interface Modes {
   auth: "firebase" | "local";
-  backend: "firestore" | "local";
+  backend: "firestore" | "local" | "misconfigured";
   email: boolean;
   razorpay: boolean;
   llm: boolean;

@@ -133,6 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-2">
             {modes?.backend === "local" && <span title="Data is stored in a local JSON file on the server. Set FIREBASE_SERVICE_ACCOUNT_JSON to use Firestore." className="hidden items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 sm:inline-flex"><Database className="h-3 w-3" />Local data mode</span>}
+            {modes?.backend === "misconfigured" && <span title="Production database configuration is missing. Contact the operator." className="hidden items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-medium text-rose-800 sm:inline-flex"><Database className="h-3 w-3" />Database unavailable</span>}
             {org?.demo && org.demoDate && <span title="Simulated business date used for billing in this demo organisation" className="hidden items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-violet-800 sm:inline-flex"><Clock className="h-3 w-3" />Demo clock: {org.demoDate}</span>}
             {!portal && user.role === "admin" && (
               <Link href="/app/assistant" className="hidden h-10 items-center gap-2 rounded-full border border-brand-200 bg-white pl-4 pr-1.5 text-sm text-ink-muted shadow-card hover:border-brand-300 md:flex">
