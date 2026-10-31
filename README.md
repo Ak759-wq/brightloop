@@ -5,7 +5,7 @@
 
 Brightloop is a subscription management platform built to simplify how businesses manage customers, products, pricing plans, quotations, subscriptions, invoices and recurring revenue.
 
-Instead of depending on disconnected spreadsheets and manual billing workflows, Brightloop brings business operations, financial management and customer self-service into one unified platform.
+Instead of depending on disconnected spreadsheets and manual    billing workflows, Brightloop brings business operations, financial management and customer self-service into one unified platform.
 
 **Live Application:** https://brightloop-zeta.vercel.app/
 
@@ -22,7 +22,7 @@ Subscription-based businesses frequently struggle with fragmented workflows:
 - Invoices are generated and managed manually.
 - Payments and outstanding balances are difficult to reconcile.
 - GST calculations introduce additional complexity.
-- Revenue visibility is delayed and difficult to maintain.
+- Revenue visibility is delayed and difficult to.    maintain.
 - Customers depend on business staff for basic subscription information.
 
 These problems lead to missed renewals, billing errors, delayed collections and poor financial visibility.
