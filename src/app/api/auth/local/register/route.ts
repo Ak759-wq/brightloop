@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 import { registerSchema } from "@/lib/schemas";
-import { authMode, DEFAULT_ORG_ID, hashPassword, signLocalToken } from "@/server/auth";
+import { authDiagnostic, authMode, DEFAULT_ORG_ID, hashPassword, signLocalToken } from "@/server/auth";
 import { toResponse, HttpError } from "@/server/http";
 import { getStore } from "@/server/store";
 import { createCustomerAccount } from "@/server/accounts";
@@ -9,6 +9,7 @@ import { createCustomerAccount } from "@/server/accounts";
 export async function POST(req: Request) {
   try {
     if (authMode() !== "local") throw new HttpError(400, "Local auth is disabled; Firebase Auth is configured");
+    if (authDiagnostic()) throw new HttpError(503, authDiagnostic()!);
     const input = registerSchema.parse(await req.json());
     const store = await getStore();
     if (await store.get("local_auth", input.email)) throw new HttpError(409, "An account with this email already exists");

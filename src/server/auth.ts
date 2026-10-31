@@ -17,13 +17,17 @@ export function authMode(): "firebase" | "local" {
   return process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? "firebase" : "local";
 }
 
+export function authDiagnostic(): string | null {
+  if (authMode() === "local" && process.env.NODE_ENV === "production") {
+    return "Production Firebase Auth is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY and the other NEXT_PUBLIC_FIREBASE_* variables.";
+  }
+  return null;
+}
+
 function secret() {
   const s = process.env.LOCAL_AUTH_SECRET;
-  if (!s && process.env.NODE_ENV === "production" && authMode() === "local") {
-    // still works, but warn loudly – local mode is for demos
-    console.warn("[brightloop] LOCAL_AUTH_SECRET not set; using an insecure development secret");
-  }
-  return s || "dev-only-insecure-secret-change-me";
+  if (!s && process.env.NODE_ENV === "production") throw new Error("LOCAL_AUTH_SECRET must be configured outside development");
+  return s || "dev-only-local-secret";
 }
 
 const b64 = (s: string) => Buffer.from(s).toString("base64url");
@@ -35,14 +39,18 @@ export function signLocalToken(uid: string, ttlSeconds = 60 * 60 * 24 * 7): stri
 }
 
 export function verifyLocalToken(token: string): string | null {
-  const [payload, sig] = token.split(".");
-  if (!payload || !sig) return null;
-  const expected = createHmac("sha256", secret()).update(payload).digest("base64url");
-  const a = Buffer.from(sig), b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  const { uid, exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { uid: string; exp: number };
-  if (exp < Date.now() / 1000) return null;
-  return uid;
+  try {
+    const [payload, sig] = token.split(".");
+    if (!payload || !sig) return null;
+    const expected = createHmac("sha256", secret()).update(payload).digest("base64url");
+    const a = Buffer.from(sig), b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+    const { uid, exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { uid: string; exp: number };
+    if (!uid || !Number.isFinite(exp) || exp < Date.now() / 1000) return null;
+    return uid;
+  } catch {
+    return null;
+  }
 }
 
 export function hashPassword(pw: string): string {
@@ -76,6 +84,7 @@ export async function verifyBearer(req: Request): Promise<VerifiedIdentity | nul
       return null;
     }
   }
+  if (authDiagnostic()) return null;
   const uid = verifyLocalToken(token);
   if (!uid) return null;
   const store = await getStore();

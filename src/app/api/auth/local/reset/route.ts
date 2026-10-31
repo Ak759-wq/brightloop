@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 import { createHash } from "node:crypto";
 import { passwordSchema } from "@/lib/schemas";
-import { hashPassword } from "@/server/auth";
+import { authDiagnostic, authMode, hashPassword } from "@/server/auth";
 import { toResponse, HttpError } from "@/server/http";
 import { getStore } from "@/server/store";
 
 export async function POST(req: Request) {
   try {
+    if (authMode() !== "local") throw new HttpError(400, "Local auth is disabled; use Firebase password reset");
+    if (authDiagnostic()) throw new HttpError(503, authDiagnostic()!);
     const { email, token, password } = (await req.json()) as { email: string; token: string; password: string };
     passwordSchema.parse(password);
     const store = await getStore();
