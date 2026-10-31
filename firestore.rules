@@ -1,0 +1,97 @@
+rules_version = '2';
+// Brightloop 2.0 – Firestore security rules (defence in depth).
+// The app's server uses firebase-admin (bypasses rules) for all writes and validated domain actions.
+// These rules govern any DIRECT client SDK access and mirror src/lib/permissions.ts:
+//  - customers read only their own documents
+//  - staff: no tax/discount/settings/audit writes, no staff creation, no cost prices (products readable by admin only)
+//  - admin: full read; financial documents are immutable except allowed status transitions
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data; }
+    function role() { return signedIn() ? me().role : 'none'; }
+    function sameOrg(d) { return signedIn() && d.orgId == me().orgId; }
+    function isAdmin() { return role() == 'admin'; }
+    function isStaff() { return role() == 'staff'; }
+    function isTeam() { return isAdmin() || isStaff(); }
+    function owns(d) { return role() == 'customer' && d.customerId == me().customerId; }
+    function teamOrOwner(d) { return sameOrg(d) && (isTeam() || owns(d)); }
+    function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+
+    match /organizations/{orgId} {
+      allow read: if signedIn() && me().orgId == orgId;
+      allow update: if isAdmin() && me().orgId == orgId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['demo', 'id']);
+      allow create, delete: if false;
+    }
+    match /profiles/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || (isAdmin() && sameOrg(resource.data)));
+      // roles are assigned by the server only (staff creation is admin-only through the API)
+      allow write: if false;
+    }
+    match /customers/{id} {
+      allow read: if sameOrg(resource.data) && (isTeam() || (role() == 'customer' && me().customerId == id));
+      allow create: if isTeam() && request.resource.data.orgId == me().orgId;
+      allow update: if isTeam() && sameOrg(resource.data) && !onlyChanges(['creditBalance']);
+      allow delete: if isAdmin() && sameOrg(resource.data);
+    }
+    match /customer_contacts/{id} {
+      allow read, write: if isTeam() && sameOrg(resource == null ? request.resource.data : resource.data);
+    }
+    // Products carry cost prices -> admin only for direct reads; the API serves a redacted catalog to staff/customers.
+    match /products/{id} {
+      allow read: if isAdmin() && sameOrg(resource.data);
+      allow write: if isAdmin();
+    }
+    match /product_variants/{id} { allow read: if sameOrg(resource.data); allow write: if isAdmin(); }
+    match /product_addons/{id}   { allow read: if sameOrg(resource.data); allow write: if isAdmin(); }
+    match /plans/{id} {
+      allow read: if sameOrg(resource.data) && (isTeam() || (resource.data.public == true && resource.data.active == true));
+      allow write: if isAdmin();
+    }
+    match /quotation_templates/{id} { allow read: if isTeam() && sameOrg(resource.data); allow write: if isAdmin(); }
+    match /tax_rules/{id}  { allow read: if isTeam() && sameOrg(resource.data); allow write: if isAdmin(); }
+    match /discounts/{id}  { allow read: if isTeam() && sameOrg(resource.data); allow write: if isAdmin(); }
+    match /discount_usages/{id} { allow read: if isAdmin() && sameOrg(resource.data); allow write: if false; }
+
+    // ---- Financial documents: server-written; clients may only read (team or owner) ----
+    match /subscriptions/{id} {
+      allow read: if teamOrOwner(resource.data);
+      allow write: if false; // lifecycle changes go through /api/subscriptions/* (validated + versioned + audited)
+    }
+    match /subscription_versions/{id}   { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /subscription_amendments/{id} { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /invoices/{id} {
+      allow read: if teamOrOwner(resource.data);
+      allow create, delete: if false;
+      // Only allowed status transitions, never amounts/lines: draft -> confirmed | cancelled
+      allow update: if isTeam() && sameOrg(resource.data)
+        && resource.data.status == 'draft'
+        && request.resource.data.status in ['confirmed', 'cancelled']
+        && onlyChanges(['status', 'confirmedAt', 'cancelledAt', 'cancelReason', 'updatedAt']);
+    }
+    match /credit_notes/{id}        { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /payments/{id}            { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /refunds/{id}             { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /payment_attempts/{id}    { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /usage_events/{id}        { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /usage_aggregations/{id}  { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /credit_wallets/{id}      { allow read: if teamOrOwner(resource.data); allow write: if false; }
+    match /credit_transactions/{id} { allow read: if teamOrOwner(resource.data); allow write: if false; }
+
+    match /notifications/{id} {
+      allow read: if sameOrg(resource.data) && ((resource.data.audience == 'customer' && owns(resource.data)) || (resource.data.audience == 'staff' && isTeam()));
+      allow update: if sameOrg(resource.data) && onlyChanges(['read']) && ((resource.data.audience == 'customer' && owns(resource.data)) || (resource.data.audience == 'staff' && isTeam()));
+      allow create, delete: if false;
+    }
+    match /automation_rules/{id}      { allow read, write: if isAdmin() && sameOrg(resource == null ? request.resource.data : resource.data); }
+    match /automation_executions/{id} { allow read: if isAdmin() && sameOrg(resource.data); allow write: if false; }
+    match /audit_logs/{id}            { allow read: if isAdmin() && sameOrg(resource.data); allow write: if false; }
+    match /billing_jobs/{id}          { allow read: if isAdmin() && sameOrg(resource.data); allow write: if false; }
+    match /billing_events/{id}        { allow read: if isAdmin() && sameOrg(resource.data); allow write: if false; }
+    match /billing_jobs_locks/{id}    { allow read, write: if false; }
+    match /counters/{id}              { allow read, write: if false; }
+    match /local_auth/{id}            { allow read, write: if false; }
+    match /password_resets/{id}       { allow read, write: if false; }
+    match /{document=**}              { allow read, write: if false; }
+  }
+}
