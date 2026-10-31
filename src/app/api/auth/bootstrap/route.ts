@@ -6,8 +6,14 @@ import { toResponse, HttpError } from "@/server/http";
 import { getStore } from "@/server/store";
 import { createCustomerAccount } from "@/server/accounts";
 import type { Profile } from "@/lib/types";
+import { entryMismatchMessage, roleMatchesEntry } from "@/lib/auth-entry";
 
-const schema = z.object({ name: z.string().trim().min(2).max(80).optional(), company: z.string().max(120).optional(), placeOfSupply: z.string().regex(/^\d{2}$/).optional() });
+const schema = z.object({
+  name: z.string().trim().min(2).max(80).optional(),
+  company: z.string().max(120).optional(),
+  placeOfSupply: z.string().regex(/^\d{2}$/).optional(),
+  entry: z.enum(["customer", "team"]).optional(),
+});
 
 /**
  * Firebase mode: called after sign-up/sign-in with a verified ID token.
@@ -33,9 +39,13 @@ async function bootstrap(req: Request, id: { uid: string; email: string }): Prom
     const input = schema.parse(await req.json().catch(() => ({})));
     const store = await getStore();
     const existing = await store.get<Profile>("profiles", id.uid);
-    if (existing) return NextResponse.json({ profile: existing });
+    if (existing) {
+      if (input.entry && !roleMatchesEntry(existing.role, input.entry)) throw new HttpError(403, entryMismatchMessage(input.entry));
+      return NextResponse.json({ profile: existing });
+    }
     const pending = await store.get<Profile & { claimable?: boolean }>("profiles", `pending_${id.email}`);
     if (pending?.claimable) {
+      if (input.entry && !roleMatchesEntry(pending.role, input.entry)) throw new HttpError(403, entryMismatchMessage(input.entry));
       const { id: _old, ...rest } = pending;
       void _old;
       await store.create("profiles", { ...rest, uid: id.uid, claimable: false, updatedAt: new Date().toISOString() }, id.uid);
@@ -43,6 +53,7 @@ async function bootstrap(req: Request, id: { uid: string; email: string }): Prom
       if (pending.customerId) await store.update("customers", pending.customerId, { userId: id.uid });
       return NextResponse.json({ profile: { ...rest, id: id.uid, uid: id.uid } });
     }
+    if (input.entry === "team") throw new HttpError(403, "Admin and Staff accounts must be invited by an administrator.");
     await createCustomerAccount(store, DEFAULT_ORG_ID, id.uid, { name: input.name ?? id.email.split("@")[0], email: id.email, company: input.company, placeOfSupply: input.placeOfSupply });
     return NextResponse.json({ profile: await store.get("profiles", id.uid) });
   } catch (e) {

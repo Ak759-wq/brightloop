@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useAuth, type SessionInfo } from "@/lib/client/auth";
+import type { AuthEntry } from "@/lib/auth-entry";
 
 function GoogleG() {
   return (
@@ -13,7 +14,7 @@ function GoogleG() {
   );
 }
 
-export function GoogleButton({ label = "Continue with Google", onDone, onError }: { label?: string; onDone: (s: SessionInfo) => void; onError: (msg: string) => void }) {
+export function GoogleButton({ label = "Continue with Google", entry, onDone, onError }: { label?: string; entry?: AuthEntry; onDone: (s: SessionInfo) => void; onError: (msg: string) => void }) {
   const { signInWithGoogle, googleAvailable } = useAuth();
   const [busy, setBusy] = useState(false);
   if (!googleAvailable) return null;
@@ -23,7 +24,7 @@ export function GoogleButton({ label = "Continue with Google", onDone, onError }
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        try { onDone(await signInWithGoogle()); }
+        try { onDone(await signInWithGoogle(entry)); }
         catch (e) { onError((e as Error).message); }
         finally { setBusy(false); }
       }}

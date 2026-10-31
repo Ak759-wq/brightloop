@@ -19,7 +19,7 @@ export default function ForgotPage() {
         <Field label="Email" id="email"><Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <Button type="submit" size="lg" className="w-full" loading={busy}>Send reset link</Button>
       </form>
-      <p className="mt-5 text-center text-sm"><Link href="/login" className="font-medium text-brand-600 hover:underline">Back to sign in</Link></p>
+      <p className="mt-5 text-center text-sm"><Link href="/customer/login" className="font-medium text-brand-600 hover:underline">Back to sign in</Link></p>
     </div>
   );
 }

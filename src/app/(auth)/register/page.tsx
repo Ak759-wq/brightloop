@@ -69,7 +69,7 @@ export default function RegisterPage() {
         </Field>
         <Button type="submit" size="lg" className="w-full" loading={busy}>Create account</Button>
       </form>
-      <p className="mt-5 text-center text-sm text-ink-muted">Already have an account? <Link href="/login" className="font-medium text-brand-600 hover:underline">Sign in</Link></p>
+      <p className="mt-5 text-center text-sm text-ink-muted">Already have an account? <Link href="/customer/login" className="font-medium text-brand-600 hover:underline">Customer sign in</Link></p>
     </div>
   );
 }
