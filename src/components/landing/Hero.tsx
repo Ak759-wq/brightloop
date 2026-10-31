@@ -128,7 +128,7 @@ export function Hero({ signedIn, dashboardHref }: { signedIn: boolean; dashboard
   }, []);
 
   return (
-    <section ref={root} className="relative isolate overflow-hidden bg-navy-950 pb-16 pt-32 text-white sm:pt-36" style={{ ["--mx" as string]: 0, ["--my" as string]: 0, ["--sp" as string]: 0 }}>
+    <section ref={root} className="relative isolate overflow-hidden bg-navy-950 pb-24 pt-32 text-white sm:pt-36" style={{ backgroundImage: "radial-gradient(60% 50% at 50% 0%, rgba(58,102,245,.35), transparent 70%), radial-gradient(40% 40% at 50% 85%, rgba(34,211,238,.18), transparent 70%)", ["--mx" as string]: 0, ["--my" as string]: 0, ["--sp" as string]: 0 }}>
       <AuroraCanvas className="absolute inset-0 -z-20 h-full w-full" />
       <div className="hero-grid pointer-events-none absolute inset-0 -z-10" />
       <div className="hero-beam pointer-events-none absolute left-[18%] top-0 -z-10 h-40 w-px" />
@@ -169,17 +169,17 @@ export function Hero({ signedIn, dashboardHref }: { signedIn: boolean; dashboard
         <div className="hero-mock">
           <DashboardMock />
         </div>
-        <div className="hero-float hero-float-a absolute -left-2 top-16 hidden rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-left shadow-2xl backdrop-blur-xl lg:block">
+        <div className="hero-float hero-float-a absolute -left-6 top-24 xl:-left-14 hidden rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-left shadow-2xl backdrop-blur-xl lg:block">
           <p className="flex items-center gap-1.5 text-[11px] text-slate-300"><Zap className="h-3.5 w-3.5 text-amber-300" />Proration</p>
           <p className="mt-1 text-sm font-semibold">₹2,316.13 credited</p>
           <p className="text-[10px] text-slate-400">Upgrade mid-cycle · 17 of 30 days</p>
         </div>
-        <div className="hero-float hero-float-b absolute -right-2 bottom-24 hidden rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-left shadow-2xl backdrop-blur-xl lg:block">
+        <div className="hero-float hero-float-b absolute -right-6 -bottom-2 xl:-right-14 hidden rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-left shadow-2xl backdrop-blur-xl lg:block">
           <p className="text-[11px] text-slate-300">Tax split · Karnataka → Karnataka</p>
           <div className="mt-1.5 flex gap-2 text-xs font-medium"><span className="rounded-md bg-blue-500/20 px-2 py-0.5">CGST 9%</span><span className="rounded-md bg-cyan-400/20 px-2 py-0.5">SGST 9%</span></div>
         </div>
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-canvas" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-canvas" />
     </section>
   );
 }

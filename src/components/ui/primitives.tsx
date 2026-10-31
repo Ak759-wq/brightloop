@@ -87,10 +87,10 @@ export function StatusPill({ status, label }: { status: string; label?: string }
 
 export function Label({ htmlFor, children, hint }: { htmlFor?: string; children: ReactNode; hint?: ReactNode }) {
   return (
-    <label htmlFor={htmlFor} className="mb-1.5 flex items-center justify-between text-xs font-medium text-slate-700">
-      <span>{children}</span>
+    <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-slate-700">
+      <label htmlFor={htmlFor}>{children}</label>
       {hint && <span className="font-normal text-ink-soft">{hint}</span>}
-    </label>
+    </div>
   );
 }
 

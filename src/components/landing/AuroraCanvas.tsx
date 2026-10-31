@@ -19,6 +19,10 @@ void main(){
  vec3 c=mix(navy,deep,uv.y);
  float band=smoothstep(.25,.95,f)*smoothstep(-.1,.75,uv.y);
  c=mix(c,blue,band*.85);
+ // aurora curtains: vertical ribbons that sway, strongest in the upper half
+ float rib=sin(p.x*3.2+w.y*4.+T*6.)*.5+.5;
+ float curtain=pow(rib,3.)*smoothstep(.2,.85,uv.y)*(1.-smoothstep(.6,1.05,uv.y))*smoothstep(.35,.8,f+.15);
+ c+=mix(indigo,cyan,rib*q.x)*curtain*.75;
  c=mix(c,indigo,smoothstep(.55,1.,f*w.x)*.6*uv.y);
  c+=cyan*pow(smoothstep(.6,1.,f*q.y*1.6),2.)*.55;
  // top beam
