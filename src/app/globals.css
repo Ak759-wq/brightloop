@@ -48,7 +48,17 @@ body { @apply bg-canvas text-ink; font-feature-settings: "cv11", "ss01"; }
 .hero-area { animation: hero-op 1.2s ease 1.8s both; }
 .hero-dot { animation: hero-op .6s ease 3s both; }
 .hero-feed-row { animation: hero-row .5s cubic-bezier(.2,.7,.2,1) both; }
+/* CSS aurora: works everywhere, the WebGL canvas layers on top when available */
+@keyframes hero-drift-a { 0%,100% { transform: translate(-10%, -5%) rotate(-8deg) scaleX(1); } 50% { transform: translate(12%, 6%) rotate(6deg) scaleX(1.25); } }
+@keyframes hero-drift-b { 0%,100% { transform: translate(15%, 0) rotate(10deg); } 50% { transform: translate(-12%, 8%) rotate(-6deg); } }
+@keyframes hero-drift-c { 0%,100% { transform: translate(0, 10%) scale(1); opacity: .5; } 50% { transform: translate(-6%, -4%) scale(1.2); opacity: .85; } }
+.hero-aurora { overflow: hidden; }
+.hero-aurora span { position: absolute; border-radius: 9999px; filter: blur(70px); mix-blend-mode: screen; }
+.hero-aurora span:nth-child(1) { left: 5%; top: -12%; width: 65%; height: 42%; background: linear-gradient(90deg, rgba(31,74,232,.0), rgba(58,102,245,.75), rgba(34,211,238,.45)); animation: hero-drift-a 14s ease-in-out infinite; }
+.hero-aurora span:nth-child(2) { right: 0; top: 4%; width: 55%; height: 34%; background: linear-gradient(90deg, rgba(34,211,238,.5), rgba(95,139,251,.55), rgba(31,74,232,0)); animation: hero-drift-b 18s ease-in-out infinite; }
+.hero-aurora span:nth-child(3) { left: 20%; top: 45%; width: 60%; height: 40%; background: radial-gradient(closest-side, rgba(31,74,232,.7), transparent); animation: hero-drift-c 11s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
+  .hero-aurora span,
   .hero-word, .hero-fade, .hero-badge, .hero-gradient-text, .hero-mock, .hero-float, .hero-line, .hero-area, .hero-dot, .hero-feed-row, .hero-beam, .hero-badge-border::before { animation: none !important; }
   .hero-line { stroke-dasharray: none; }
 }

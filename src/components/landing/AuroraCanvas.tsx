@@ -81,5 +81,5 @@ export function AuroraCanvas({ className = "" }: { className?: string }) {
     if (!reduce) loop();
     return () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); window.removeEventListener("pointermove", onMove); };
   }, []);
-  return <canvas ref={ref} className={`opacity-0 transition-opacity duration-1000 data-[ready='1']:opacity-100 ${className}`} aria-hidden />;
+  return <canvas ref={ref} className={`opacity-0 transition-opacity duration-1000 data-[ready='1']:opacity-80 mix-blend-screen ${className}`} aria-hidden />;
 }
