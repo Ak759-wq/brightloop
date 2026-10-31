@@ -14,3 +14,4 @@ service-account*.json
 *-firebase-adminsdk-*.json
 test-results
 playwright-report
+screens/

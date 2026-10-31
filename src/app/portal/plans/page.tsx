@@ -16,15 +16,16 @@ export default function ExplorePlans() {
   const plans = useApi<{ items: Plan[] }>("/api/r/plans?limit=50");
   const [pick, setPick] = useState<Plan | null>(null);
   const [interval, setInterval] = useState("all");
-  const list = (plans.data?.items ?? []).filter((p) => interval === "all" || p.interval === interval);
+  const ORDER = ["daily", "weekly", "monthly", "yearly"];
+  const list = (plans.data?.items ?? []).filter((p) => interval === "all" || p.interval === interval).sort((a, b) => ORDER.indexOf(a.interval) - ORDER.indexOf(b.interval) || a.name.localeCompare(b.name));
   return (
     <div>
       <PageHeader title="Explore plans" description="Transparent pricing. GST is added based on your state." actions={<div className="flex gap-1 rounded-full border border-slate-200 bg-white p-1">{["all", "monthly", "yearly", "weekly", "daily"].map((i) => <button key={i} onClick={() => setInterval(i)} className={`rounded-full px-3 py-1.5 text-xs font-medium ${interval === i ? "bg-brand-600 text-white" : "text-slate-600"}`}>{cap(i)}</button>)}</div>} />
       {!plans.data ? <div className="grid gap-4 md:grid-cols-3"><Skeleton className="h-72" /><Skeleton className="h-72" /><Skeleton className="h-72" /></div> : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {list.map((p, idx) => (
-            <Card key={p.id} className={`relative flex flex-col p-6 ${idx === 0 ? "ring-2 ring-brand-600" : ""}`}>
-              {idx === 0 && <Badge tone="blue" className="absolute right-5 top-5"><Sparkles className="h-3 w-3" />Popular</Badge>}
+          {list.map((p) => (
+            <Card key={p.id} className="relative flex flex-col p-6 transition hover:-translate-y-0.5 hover:shadow-lift">
+              <Badge tone="blue" className="absolute right-5 top-5"><Sparkles className="h-3 w-3" />{cap(p.interval)}</Badge>
               <p className="text-lg font-semibold">{p.name}</p>
               <p className="mt-1 min-h-[40px] text-sm text-ink-muted">{p.description}</p>
               <p className="mt-4 text-3xl font-semibold tracking-tight">
@@ -33,7 +34,7 @@ export default function ExplorePlans() {
               </p>
               {p.minQuantity > 1 && <p className="text-xs text-ink-muted">Minimum {p.minQuantity} units</p>}
               <ul className="mt-5 flex-1 space-y-2 text-sm">{p.features.map((f) => <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-brand-600" />{f}</li>)}</ul>
-              <Button className="mt-6 w-full" variant={idx === 0 ? "primary" : "secondary"} onClick={() => setPick(p)}>Choose {p.name}</Button>
+              <Button className="mt-6 w-full" variant="primary" onClick={() => setPick(p)}>Choose {p.name}</Button>
             </Card>
           ))}
         </div>

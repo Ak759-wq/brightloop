@@ -14,10 +14,21 @@ const schema = z.object({ name: z.string().trim().min(2).max(80).optional(), com
  * - a CLAIMABLE pending profile for this email (seeded demo accounts, or staff invited by an admin) -> linked
  * - otherwise a new CUSTOMER profile is created. Roles are never taken from the client.
  */
+const inflight = new Map<string, Promise<Response>>();
+
 export async function POST(req: Request) {
+  const id = await verifyBearer(req);
+  if (!id) return toResponse(new HttpError(401, "Please sign in"));
+  // serialise concurrent bootstraps for the same user (prevents duplicate customer/profile docs)
+  const running = inflight.get(id.uid);
+  if (running) return (await running).clone();
+  const p = bootstrap(req, id);
+  inflight.set(id.uid, p);
+  try { return (await p).clone(); } finally { inflight.delete(id.uid); }
+}
+
+async function bootstrap(req: Request, id: { uid: string; email: string }): Promise<Response> {
   try {
-    const id = await verifyBearer(req);
-    if (!id) throw new HttpError(401, "Please sign in");
     const input = schema.parse(await req.json().catch(() => ({})));
     const store = await getStore();
     const existing = await store.get<Profile>("profiles", id.uid);

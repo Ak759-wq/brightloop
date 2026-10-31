@@ -49,6 +49,8 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | null>(null);
 const LS = "brightloop_token";
+/** While signIn/signUp run their own bootstrap (with the user's details), the auth listener must not race them. */
+let explicitFlow = false;
 const DEMO_EMAILS = ["admin@brightloop.demo", "staff@brightloop.demo", "customer@brightloop.demo"];
 
 function friendlyFirebaseError(code: string): string {
@@ -79,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unsub = onAuthStateChanged(auth, async (u) => {
           try {
             let m = await loadMe();
-            if (u && !m.session) {
+            if (u && !m.session && !explicitFlow) {
               await api("/api/auth/bootstrap", { method: "POST", body: {} });
               m = await loadMe();
             }
@@ -108,6 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async signIn(email, password) {
       email = email.trim().toLowerCase();
       if (firebaseEnabled) {
+        explicitFlow = true;
+        try {
         const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import("firebase/auth");
         const auth = firebaseAuth();
         try {
@@ -123,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let m = await loadMe();
         if (!m.session) { await api("/api/auth/bootstrap", { method: "POST", body: {} }); m = await loadMe(); }
         return requireSession(m);
+        } finally { explicitFlow = false; }
       }
       const { token } = await api<{ token: string }>("/api/auth/local/login", { body: { email, password } });
       localStorage.setItem(LS, token);
@@ -131,6 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async signUp(input) {
       const email = input.email.trim().toLowerCase();
       if (firebaseEnabled) {
+        explicitFlow = true;
+        try {
         const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
         try {
           const cred = await createUserWithEmailAndPassword(firebaseAuth(), email, input.password);
@@ -140,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         await api("/api/auth/bootstrap", { method: "POST", body: { name: input.name, company: input.company, placeOfSupply: input.placeOfSupply } });
         return requireSession(await loadMe());
+        } finally { explicitFlow = false; }
       }
       const { token } = await api<{ token: string }>("/api/auth/local/register", { body: { ...input, email } });
       localStorage.setItem(LS, token);
