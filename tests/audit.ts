@@ -25,7 +25,7 @@ export function area(name: string) {
  * docs/FINANCIAL_AUDIT_REPORT.md. Errors become { error: message } so
  * validation tests can assert on the exact rejection.
  */
-export function check<T>(id: string, title: string, input: unknown, expected: T, compute: () => T) {
+export function check(id: string, title: string, input: unknown, expected: unknown, compute: () => unknown) {
   const areaName = fileArea;
   it(`${id} ${title}`, () => {
     let actual: unknown;
