@@ -4,25 +4,35 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/client/auth";
-import type { AuthEntry } from "@/lib/auth-entry";
+import { roleMatchesEntry, type AuthEntry } from "@/lib/auth-entry";
 import { Button, Field, Input, ErrorNote } from "@/components/ui/primitives";
 import { homeFor } from "@/components/shell/nav";
 import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
 
 export function LoginForm({ entry }: { entry?: AuthEntry }) {
-  const { signIn, user, loading } = useAuth();
+  const { signIn, signOut, user, loading } = useAuth();
   const router = useRouter();
   const next = useSearchParams().get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const title = entry === "team" ? "Admin & Staff sign in" : "Welcome back";
   const subtitle = entry === "team" ? "Sign in to manage your Brightloop workspace." : "Sign in to your Brightloop account.";
 
   useEffect(() => {
-    if (!loading && user) router.replace(next && next.startsWith("/") ? next : homeFor(user.role));
-  }, [loading, user, next, router]);
+    if (loading || !user) return;
+    if (!entry || roleMatchesEntry(user.role, entry)) {
+      router.replace(next && next.startsWith("/") ? next : homeFor(user.role));
+      return;
+    }
+    setSwitchingAccount(true);
+    void signOut().catch((err) => {
+      setSwitchingAccount(false);
+      setError((err as Error).message);
+    });
+  }, [entry, loading, next, router, signOut, user]);
 
   async function go(e: string, p: string, key: string) {
     setBusy(key); setError(null);
@@ -37,7 +47,7 @@ export function LoginForm({ entry }: { entry?: AuthEntry }) {
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>
+      <p className="mt-1 text-sm text-ink-muted">{switchingAccount ? "Switching accounts so you can sign in with the right role." : subtitle}</p>
       <div className="mt-8">
         <GoogleButton entry={entry} onDone={(s) => router.replace(next && next.startsWith("/") ? next : homeFor(s.role))} onError={setError} />
       </div>
