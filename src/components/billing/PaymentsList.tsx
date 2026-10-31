@@ -42,7 +42,7 @@ export function PaymentsList({ portal = false }: { portal?: boolean }) {
             { key: "r", header: "Reference", cell: (r) => <span className="font-mono text-xs">{r.reference}</span> },
             { key: "i", header: "Invoice", cell: (r) => <Link className="font-mono text-xs text-brand-600 hover:underline" href={`${base}/invoices/${r.invoiceId}`}>{r.invoiceNumber}</Link> },
             ...(portal ? [] : [{ key: "c", header: "Customer", cell: (r: Payment) => <span className="font-medium">{r.customerName}</span> }]),
-            { key: "m", header: "Method", cell: (r) => <Badge tone={r.method === "simulator" ? "violet" : "slate"}>{cap(r.method)}</Badge> },
+            { key: "m", header: "Method", cell: (r) => <span><Badge tone={r.method === "simulator" ? "violet" : "slate"}>{cap(r.method)}</Badge>{r.method === "simulator" && <span className="ml-1 text-[11px] text-violet-700">Simulated</span>}</span> },
             { key: "d", header: "Date", cell: (r) => date(r.date) },
             { key: "n", header: "Note", hideOnMobile: true, cell: (r) => <span className="line-clamp-1 max-w-[200px] text-xs text-ink-muted">{r.note || "—"}</span> },
             { key: "a", header: "Amount", align: "right", cell: (r) => <span>{money(r.amount)}{r.amountRefunded > 0 && <span className="block text-xs text-rose-600">−{money(r.amountRefunded)} refunded</span>}</span> },

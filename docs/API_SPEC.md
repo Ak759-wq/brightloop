@@ -26,6 +26,7 @@ Readable: every collection in the permission matrix (customers are auto-scoped t
 | POST | `/api/subscriptions/:id/change` | `{ planId?, items, discountIds? }` → `{ subscription, proration, prorationInvoiceId }` |
 | POST | `/api/subscriptions/:id/invoice` | Create a draft manual invoice |
 | POST | `/api/portal/subscribe` | Customer self-service `{ planId, quantity, variantIds, addonIds, code? }` |
+| GET/PATCH | `/api/portal/profile` | Customer-owned profile read/update; role, permissions and login email are never editable |
 | POST | `/api/pricing/preview` | `{ planId, customerId?, items, discountIds }` → priced lines + invoice preview (nothing saved) |
 
 ## Invoices & payments
