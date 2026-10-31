@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+html { -webkit-font-smoothing: antialiased; }
+body { @apply bg-canvas text-ink; font-feature-settings: "cv11", "ss01"; }
+*:focus-visible { outline: 2px solid #3a66f5; outline-offset: 2px; border-radius: 6px; }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+/* PRINT: invoices print cleanly on A4 without app chrome */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: #fff !important; }
+  header, aside, nav, .no-print, [aria-live] { display: none !important; }
+  .lg\:pl-64 { padding-left: 0 !important; }
+  main { padding: 0 !important; max-width: none !important; }
+  .print-area { box-shadow: none !important; border: none !important; }
+}
