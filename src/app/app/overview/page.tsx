@@ -38,7 +38,7 @@ export default function OverviewPage() {
         }}>Run billing now</Button> : undefined} />
       {a.error && <ErrorNote message={a.error} onRetry={a.reload} />}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Monthly recurring revenue" icon={<TrendingUp className="h-4 w-4" />} loading={!k} value={money(k?.mrr ?? 0, true)} deltaLabel={k && <>ARR <b className="text-ink">{money(k.arr, true)}</b> · ARPC {money(k.arpc, true)}</>} />
+        <KpiCard label="MRR" icon={<TrendingUp className="h-4 w-4" />} loading={!k} value={money(k?.mrr ?? 0, true)} deltaLabel={k && <>ARR <b className="text-ink">{money(k.arr, true)}</b> · ARPC {money(k.arpc, true)}</>} />
         <KpiCard label="Active subscriptions" icon={<Repeat className="h-4 w-4" />} loading={!k} value={k?.activeSubs.toLocaleString("en-IN") ?? 0} deltaLabel={k && <><span className="text-emerald-600">+{k.newLast30} new</span> · <span className="text-rose-600">{k.churnedLast30} churned</span> in 30 days</>} />
         <KpiCard label="Collected this month" icon={<CircleDollarSign className="h-4 w-4" />} loading={!k} value={money(k?.collectedThisMonth ?? 0, true)} delta={delta} deltaLabel={k && <>vs {money(k.collectedLastMonth, true)} last month</>} />
         <KpiCard label="Overdue" tone="danger" icon={<AlertTriangle className="h-4 w-4" />} loading={!k} value={money(k?.overdueAmount ?? 0, true)} deltaLabel={k && <>{k.overdueCount} invoices · {money(k.outstanding, true)} total outstanding</>} />
@@ -46,7 +46,7 @@ export default function OverviewPage() {
       <div className="grid gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader title="Revenue – invoiced vs collected" subtitle="Last 12 months, from issued invoices and recorded payments" actions={<Link href="/app/analytics" className="text-xs font-medium text-brand-600 hover:underline">Full analytics</Link>} />
-          <div className="px-3 pb-4 pt-2">{a.data ? <RevenueChart data={a.data.revenueTrend} /> : <Skeleton className="m-2 h-[260px]" />}</div>
+          <div className="px-3 pb-4 pt-2">{a.data ? <RevenueChart height={360} data={a.data.revenueTrend} /> : <Skeleton className="m-2 h-[260px]" />}</div>
         </Card>
         <div className="space-y-6">
           {a.data ? <InsightCard title="Insight" action={<Link href={user?.role === "admin" ? "/app/assistant" : "/app/invoices"}><Button size="sm" variant="secondary" className="border-0">{user?.role === "admin" ? "Ask the assistant" : "View invoices"}<ArrowRight className="h-3.5 w-3.5" /></Button></Link>}>{insight(a.data)}<p className="mt-2 text-xs font-normal text-white/70">Computed from your billing data – no guesses.</p></InsightCard> : <Skeleton className="h-48" />}

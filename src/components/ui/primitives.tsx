@@ -3,13 +3,14 @@ import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type R
 import { Loader2, Inbox } from "lucide-react";
 import { cn } from "@/lib/client/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "outline" | "soft";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "dangerSoft" | "outline" | "soft";
 const variants: Record<Variant, string> = {
   primary: "bg-brand-600 text-white hover:bg-brand-700 shadow-sm shadow-brand-600/20",
   secondary: "bg-white text-ink border border-slate-200 hover:bg-slate-50 shadow-card",
   outline: "border border-brand-200 text-brand-700 hover:bg-brand-50",
   ghost: "text-slate-600 hover:bg-slate-100 hover:text-ink",
   danger: "bg-rose-600 text-white hover:bg-rose-700",
+  dangerSoft: "bg-white text-rose-600 border border-rose-200 hover:bg-rose-50",
   soft: "bg-brand-50 text-brand-700 hover:bg-brand-100",
 };
 const sizes = { sm: "h-8 px-3 text-xs gap-1.5", md: "h-10 px-4 text-sm gap-2", lg: "h-11 px-5 text-sm gap-2" };

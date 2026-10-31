@@ -43,7 +43,7 @@ function Stepper({ status }: { status: SubStatus }) {
   );
 }
 
-const ACTION_META: Record<SubAction, { label: string; icon: typeof Play; variant: "primary" | "secondary" | "danger" }> = {
+const ACTION_META: Record<SubAction, { label: string; icon: typeof Play; variant: "primary" | "secondary" | "dangerSoft" }> = {
   send_quotation: { label: "Send quotation", icon: Send, variant: "primary" },
   revert_to_draft: { label: "Back to draft", icon: Undo2, variant: "secondary" },
   confirm: { label: "Confirm", icon: BadgeCheck, variant: "primary" },
@@ -51,7 +51,7 @@ const ACTION_META: Record<SubAction, { label: string; icon: typeof Play; variant
   pause: { label: "Pause", icon: Pause, variant: "secondary" },
   resume: { label: "Resume", icon: Play, variant: "primary" },
   renew: { label: "Renew", icon: RefreshCw, variant: "secondary" },
-  close: { label: "Cancel subscription", icon: XCircle, variant: "danger" },
+  close: { label: "Cancel subscription", icon: XCircle, variant: "dangerSoft" },
 };
 
 export function SubscriptionView({ id, portal = false }: { id: string; portal?: boolean }) {

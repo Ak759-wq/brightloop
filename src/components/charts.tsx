@@ -17,9 +17,9 @@ function TooltipBox({ active, payload, label, labelFmt }: { active?: boolean; pa
   );
 }
 
-export function RevenueChart({ data }: { data: { month: string; invoiced: number; collected: number }[] }) {
+export function RevenueChart({ data, height = 280 }: { data: { month: string; invoiced: number; collected: number }[]; height?: number }) {
   return (
-    <ResponsiveContainer width="100%" height={280}>
+    <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke="#eef2f7" />
         <XAxis dataKey="month" tickFormatter={monthLabel} {...axis} />

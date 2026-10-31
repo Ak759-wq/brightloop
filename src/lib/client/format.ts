@@ -1,7 +1,16 @@
 import { formatMoney } from "@/lib/finance/money";
 import { INDIAN_STATES } from "@/lib/finance/tax";
 
-export const money = (paise: number | null | undefined, compact = false) => formatMoney(paise ?? 0, "INR", { compact });
+/** Compact INR: ₹950, ₹14.1K, ₹2.05L, ₹1.2Cr (Indian units, never the ambiguous "T"). */
+function compactINR(paise: number) {
+  const r = paise / 100, a = Math.abs(r), sign = r < 0 ? "-" : "";
+  const f = (v: number, u: string) => `${sign}₹${v >= 100 ? Math.round(v) : Number(v.toFixed(v >= 10 ? 1 : 2))}${u}`;
+  if (a >= 1e7) return f(a / 1e7, "Cr");
+  if (a >= 1e5) return f(a / 1e5, "L");
+  if (a >= 1e3) return f(a / 1e3, "K");
+  return `${sign}₹${Math.round(a)}`;
+}
+export const money = (paise: number | null | undefined, compact = false) => (compact ? compactINR(paise ?? 0) : formatMoney(paise ?? 0, "INR"));
 export const rupeesToPaise = (v: string | number) => Math.round(Number(v || 0) * 100);
 export const paiseToRupees = (p: number | null | undefined) => (p == null ? "" : String(p / 100));
 

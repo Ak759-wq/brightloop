@@ -28,7 +28,7 @@ export async function billSubscription(ctx: Ctx, subIn: Subscription): Promise<B
   );
   if (decision.action === "skip") return out;
   if (decision.action === "close") {
-    await ctx.store.update("subscriptions", subIn.id, { status: "closed", closedAt: nowISO(), closeReason: `Auto-closed: ${decision.reason}`, nextBillingDate: null, updatedAt: nowISO() });
+    await ctx.store.update("subscriptions", subIn.id, { status: "closed", closedAt: nowISO(), closedOn: ctx.today, closeReason: `Auto-closed: ${decision.reason}`, nextBillingDate: null, updatedAt: nowISO() });
     await audit(ctx, "subscription.auto_closed", "subscriptions", subIn.id, { note: decision.reason });
     await emit(ctx, "subscription.closed", { customerId: subIn.customerId, entity: "subscriptions", entityId: subIn.id, label: subIn.number });
     out.action = "closed";
@@ -83,7 +83,7 @@ export async function billSubscription(ctx: Ctx, subIn: Subscription): Promise<B
     }
   }
   if (decision.closeAfter) {
-    await ctx.store.update("subscriptions", subIn.id, { status: "closed", closedAt: nowISO(), closeReason: "Auto-closed at end of term", nextBillingDate: null, updatedAt: nowISO() });
+    await ctx.store.update("subscriptions", subIn.id, { status: "closed", closedAt: nowISO(), closedOn: ctx.today, closeReason: "Auto-closed at end of term", nextBillingDate: null, updatedAt: nowISO() });
     await audit(ctx, "subscription.auto_closed", "subscriptions", subIn.id, { note: "end of term" });
   }
   return out;

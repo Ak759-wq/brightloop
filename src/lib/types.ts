@@ -165,6 +165,8 @@ export interface Subscription extends BaseDoc {
   pastDue?: boolean;
   closeReason?: string | null;
   closedAt?: string | null;
+  /** business date of closure (demo-clock aware) */
+  closedOn?: string | null;
   activatedAt?: string | null;
   notes?: string;
   autoClose: boolean;

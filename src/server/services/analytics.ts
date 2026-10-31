@@ -38,7 +38,7 @@ export async function computeAnalytics(ctx: Ctx, opts: { fresh?: boolean } = {})
     ctx.store.all<Invoice>("invoices", [["orgId", "==", ctx.org.id]]),
     ctx.store.all<Payment>("payments", [["orgId", "==", ctx.org.id]]),
     ctx.store.all<{ status: "succeeded" | "failed" | "pending"; invoiceId: string }>("payment_attempts", [["orgId", "==", ctx.org.id]]),
-    ctx.store.all<{ createdAt: string; oldAmount: number; newAmount: number; subscriptionId: string }>("subscription_amendments", [["orgId", "==", ctx.org.id]]),
+    ctx.store.all<{ createdAt: string; effectiveDate?: string; oldAmount: number; newAmount: number; subscriptionId: string }>("subscription_amendments", [["orgId", "==", ctx.org.id]]),
   ]);
   const today = ctx.today;
   const m = (s: Subscription) => normalizeToMonthly(s.recurringAmount, s.interval, s.intervalCount);
@@ -53,8 +53,9 @@ export async function computeAnalytics(ctx: Ctx, opts: { fresh?: boolean } = {})
   const live = invoices.filter((i) => i.status !== "draft" && i.status !== "cancelled").map((i) => ({ ...i, status: deriveStatus(i, today), owed: outstanding(i) }));
   const overdue = live.filter((i) => i.status === "overdue");
   const start30 = addDays(today, -30);
-  const churned = subs.filter((s) => s.status === "closed" && s.closedAt && s.closedAt.slice(0, 10) >= start30);
-  const newSubs = subs.filter((s) => s.activatedAt && s.activatedAt.slice(0, 10) >= start30 && s.startDate);
+  const closedOn = (s: Subscription) => s.closedOn ?? s.closedAt?.slice(0, 10) ?? null;
+  const churned = subs.filter((s) => s.status === "closed" && (closedOn(s) ?? "") >= start30);
+  const newSubs = subs.filter((s) => s.startDate && s.startDate >= start30 && s.startDate <= today && s.activatedAt);
 
   // Revenue trend (12 months)
   const months: string[] = [];
@@ -68,13 +69,13 @@ export async function computeAnalytics(ctx: Ctx, opts: { fresh?: boolean } = {})
   const mrrTrend = months.map((mo) => {
     const end = addDays(addMonthsAnchored(mo + "-01", 1), -1);
     const startMo = mo + "-01";
-    const v = sum(subs.filter((s) => s.startDate && s.startDate <= end && ["active", "paused", "closed"].includes(s.status) && !(s.status === "paused") && (!s.closedAt || s.closedAt.slice(0, 10) >= startMo)).map(m));
+    const v = sum(subs.filter((s) => s.startDate && s.startDate <= end && ["active", "paused", "closed"].includes(s.status) && !(s.status === "paused") && (!closedOn(s) || closedOn(s)! >= startMo)).map(m));
     return { month: mo, mrr: v, estimate: true as const };
   });
   const proj = projectMrr(mrrTrend.slice(-4).map((x) => x.mrr), 3);
   const forecast = proj.projected.map((v, i) => ({ month: monthKey(addMonthsAnchored(today.slice(0, 8) + "01", i + 1)), mrr: v }));
 
-  const recentAmend = amendments.filter((a) => a.createdAt.slice(0, 10) >= start30);
+  const recentAmend = amendments.filter((a) => (a.effectiveDate ?? a.createdAt.slice(0, 10)) >= start30);
   const expansion = sum(recentAmend.filter((a) => a.newAmount > a.oldAmount).map((a) => a.newAmount - a.oldAmount));
   const contraction = sum(recentAmend.filter((a) => a.newAmount < a.oldAmount).map((a) => a.oldAmount - a.newAmount));
   const churnLossMrr = sum(churned.map(m));

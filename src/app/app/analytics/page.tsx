@@ -24,7 +24,7 @@ export default function AnalyticsPage() {
   const d = a.data;
   const b = d?.bridge;
   const nrr = b && b.start ? (b.start + b.expansion - b.contraction - b.churned) / b.start : null;
-  const grr = b && b.start ? Math.min(1, (b.start - b.contraction - b.churned) / b.start) : null;
+  const grr = b && b.start ? Math.max(0, Math.min(1, (b.start - b.contraction - b.churned) / b.start)) : null;
   return (
     <div className="space-y-6">
       <PageHeader title="Analytics" description="Revenue intelligence with filters and definitions. Estimates and forecasts are labelled." actions={<Button variant="secondary" icon={<RefreshCw className="h-4 w-4" />} onClick={async () => { a.setData(await api<Analytics>("/api/analytics?fresh=1")); }}>Refresh</Button>} />

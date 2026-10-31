@@ -194,6 +194,7 @@ export async function transition(ctx: Ctx, id: string, action: SubAction, opts: 
       if (!opts.reason?.trim()) throw new DomainError("Please give a reason for closing");
       patch.closeReason = opts.reason;
       patch.closedAt = nowISO();
+      patch.closedOn = ctx.today;
       patch.nextBillingDate = null;
       note = `closed: ${opts.reason}`;
       break;
@@ -253,10 +254,11 @@ export async function changeSubscription(ctx: Ctx, id: string, input: { planId?:
     await ctx.store.update("customers", customer.id, { creditBalance: (customer.creditBalance ?? 0) - proration.net, updatedAt: nowISO() });
   }
   await ctx.store.update("subscriptions", id, { planId: next.planId, planName: next.planName, items, discountIds, subtotal, recurringAmount, version: next.version, updatedAt: next.updatedAt });
-  await writeVersion(ctx, next, proration ? `${proration.kind} (net ${proration.net})` : "lines updated");
+  const rs = (p: number) => `₹${(Math.abs(p) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+  await writeVersion(ctx, next, proration ? `${proration.kind} – ${proration.net >= 0 ? `proration charge ${rs(proration.net)}` : `credit ${rs(proration.net)}`}` : `lines updated (${sub.planName} → ${plan.name})`);
   await ctx.store.create("subscription_amendments", {
     ...stamp(ctx.org.id), subscriptionId: id, customerId: sub.customerId, fromPlan: sub.planName, toPlan: plan.name,
-    oldAmount: sub.recurringAmount, newAmount: recurringAmount, proration, prorationInvoiceId, kind: proration?.kind ?? (recurringAmount >= sub.recurringAmount ? "upgrade" : "downgrade"), actor: ctx.actor.name,
+    oldAmount: sub.recurringAmount, newAmount: recurringAmount, effectiveDate: ctx.today, proration, prorationInvoiceId, kind: proration?.kind ?? (recurringAmount >= sub.recurringAmount ? "upgrade" : "downgrade"), actor: ctx.actor.name,
   }, newId("amd_"));
   await audit(ctx, "subscription.changed", "subscriptions", id, { before: { plan: sub.planName, amount: sub.recurringAmount }, after: { plan: plan.name, amount: recurringAmount }, note: proration ? `proration net ${proration.net}` : undefined });
   return { subscription: next, proration, prorationInvoiceId };
