@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:audit": "vitest run && tsx scripts/audit-report.ts",
     "seed": "tsx scripts/seed.ts",
-    "seed:bulk": "tsx scripts/seed.ts --bulk 3000"
+    "seed:bulk": "tsx scripts/seed.ts --bulk 3000",
+    "prebuild": "node scripts/gen-firestore-config.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
