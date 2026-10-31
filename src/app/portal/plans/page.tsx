@@ -13,11 +13,16 @@ import { intervalText, money, cap } from "@/lib/client/format";
 interface Plan { id: string; name: string; productId: string; description: string; features: string[]; pricingModel: string; price: number; tiers: { upTo: number | null; unitAmount: number }[]; interval: string; intervalCount: number; minQuantity: number }
 
 export default function ExplorePlans() {
+  const router = useRouter();
   const plans = useApi<{ items: Plan[] }>("/api/r/plans?limit=50");
+  const subscriptions = useApi<{ items: { id: string; planId: string; status: string }[] }>("/api/r/subscriptions?limit=50");
   const [pick, setPick] = useState<Plan | null>(null);
+  const [compare, setCompare] = useState<string[]>([]);
   const [interval, setInterval] = useState("all");
   const ORDER = ["daily", "weekly", "monthly", "yearly"];
   const list = (plans.data?.items ?? []).filter((p) => interval === "all" || p.interval === interval).sort((a, b) => ORDER.indexOf(a.interval) - ORDER.indexOf(b.interval) || a.name.localeCompare(b.name));
+  const currentPlanIds = new Set((subscriptions.data?.items ?? []).filter((s) => ["active", "paused", "confirmed"].includes(s.status)).map((s) => s.planId));
+  const compared = list.filter((p) => compare.includes(p.id));
   return (
     <div>
       <PageHeader title="Explore plans" description="Transparent pricing. GST is added based on your state." actions={<div className="flex gap-1 rounded-full border border-slate-200 bg-white p-1">{["all", "monthly", "yearly", "weekly", "daily"].map((i) => <button key={i} onClick={() => setInterval(i)} className={`rounded-full px-3 py-1.5 text-xs font-medium ${interval === i ? "bg-brand-600 text-white" : "text-slate-600"}`}>{cap(i)}</button>)}</div>} />
@@ -34,11 +39,12 @@ export default function ExplorePlans() {
               </p>
               {p.minQuantity > 1 && <p className="text-xs text-ink-muted">Minimum {p.minQuantity} units</p>}
               <ul className="mt-5 flex-1 space-y-2 text-sm">{p.features.map((f) => <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-brand-600" />{f}</li>)}</ul>
-              <Button className="mt-6 w-full" variant="primary" onClick={() => setPick(p)}>Choose {p.name}</Button>
+              <div className="mt-6 flex gap-2"><Button className="flex-1" variant={currentPlanIds.has(p.id) ? "secondary" : "primary"} onClick={() => { const current = subscriptions.data?.items.find((s) => s.planId === p.id && ["active", "paused", "confirmed"].includes(s.status)); if (current) router.push(`/portal/subscriptions/${current.id}`); else setPick(p); }}>{currentPlanIds.has(p.id) ? "Manage plan" : `Choose ${p.name}`}</Button><Button variant="ghost" aria-label={`Compare ${p.name}`} onClick={() => setCompare((ids) => ids.includes(p.id) ? ids.filter((id) => id !== p.id) : ids.length < 3 ? [...ids, p.id] : ids)}>{compare.includes(p.id) ? "Compared" : "Compare"}</Button></div>
             </Card>
           ))}
         </div>
       )}
+      {compared.length > 1 && <Card className="mt-6 overflow-hidden"><div className="border-b border-slate-100 p-5"><p className="font-semibold">Compare plans</p><p className="mt-1 text-sm text-ink-muted">Compare up to three available plans side by side.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead><tr className="bg-slate-50 text-left text-xs text-ink-muted"><th className="px-5 py-3 font-medium">Feature</th>{compared.map((p) => <th key={p.id} className="px-5 py-3 font-medium">{p.name}</th>)}</tr></thead><tbody className="divide-y divide-slate-100"><tr><td className="px-5 py-3 font-medium">Price</td>{compared.map((p) => <td key={p.id} className="px-5 py-3">{money(p.price)}{intervalText(p.interval, p.intervalCount)}</td>)}</tr><tr><td className="px-5 py-3 font-medium">Features</td>{compared.map((p) => <td key={p.id} className="px-5 py-3"><ul className="space-y-1">{p.features.map((f) => <li key={f}>✓ {f}</li>)}</ul></td>)}</tr></tbody></table></div></Card>}
       {pick && <SubscribeModal plan={pick} onClose={() => setPick(null)} />}
     </div>
   );

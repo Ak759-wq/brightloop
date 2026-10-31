@@ -16,11 +16,13 @@ export default function PortalOverview() {
   const subs = useApi<{ items: Sub[] }>("/api/r/subscriptions?limit=50");
   const invs = useApi<{ items: Invoice[] }>("/api/r/invoices?limit=50");
   const wallet = useApi<{ items: { balance: number; lastTopUp: number; lowBalancePct: number }[] }>("/api/r/credit_wallets?limit=1");
+  const payments = useApi<{ items: { id: string; invoiceNumber: string; amount: number; method: string; date: string; reference: string }[] }>("/api/r/payments?limit=5");
   const active = (subs.data?.items ?? []).filter((s) => s.status === "active");
   const open = (invs.data?.items ?? []).filter((i) => !["draft", "cancelled", "paid"].includes(i.status) && owedOf(i) > 0);
   const due = open.reduce((s, i) => s + owedOf(i), 0);
   const next = active.map((s) => s.nextBillingDate).filter(Boolean).sort()[0];
   const w = wallet.data?.items[0];
+  const paid = (invs.data?.items ?? []).reduce((sum, i) => sum + Math.max(0, i.amountPaid - i.amountRefunded), 0);
   return (
     <div className="space-y-6">
       <PageHeader title={`Welcome, ${user?.name.split(" ")[0]}`} description="Your subscriptions, invoices and credits in one place." />
@@ -29,6 +31,7 @@ export default function PortalOverview() {
         <KpiCard label="Amount due" tone={open.some((i) => i.status === "overdue") ? "danger" : "default"} icon={<Receipt className="h-4 w-4" />} loading={!invs.data} value={money(due)} hint={`${open.length} unpaid invoice${open.length === 1 ? "" : "s"}`} />
         <KpiCard label="Recurring spend" icon={<CreditCard className="h-4 w-4" />} loading={!subs.data} value={money(active.reduce((s, x) => s + x.recurringAmount, 0))} hint="Per billing period, before GST" />
         <KpiCard label="Credits" icon={<Wallet className="h-4 w-4" />} loading={!wallet.data} value={(w?.balance ?? 0).toLocaleString("en-IN")} hint={w && w.balance <= Math.floor((w.lastTopUp * w.lowBalancePct) / 100) ? "Running low – top up" : "Prepaid usage credits"} />
+        <KpiCard label="Total paid" icon={<CreditCard className="h-4 w-4" />} loading={!invs.data} value={money(paid)} hint="Across your invoices" />
       </div>
       {open.length > 0 && (
         <InsightCard title="Action needed" action={<Link href={`/portal/invoices/${open[0].id}`}><Button size="sm" variant="secondary" className="border-0">Pay {money(owedOf(open[0]))}<ArrowRight className="h-3.5 w-3.5" /></Button></Link>}>
@@ -48,6 +51,13 @@ export default function PortalOverview() {
           <ul className="mt-3 divide-y divide-slate-100">
             {(invs.data?.items ?? []).slice(0, 5).map((i) => <li key={i.id}><Link href={`/portal/invoices/${i.id}`} className="flex items-center justify-between px-5 py-3 text-sm hover:bg-slate-50"><span><span className="font-mono text-xs">{i.number}</span><span className="block text-xs text-ink-muted">Due {date(i.dueDate)}</span></span><span className="flex items-center gap-3"><span className="tabular-nums">{money(i.total)}</span><StatusPill status={i.status} /></span></Link></li>)}
             {invs.data && !invs.data.items.length && <li><EmptyState title="No invoices yet" /></li>}
+          </ul>
+        </Card>
+        <Card>
+          <CardHeader title="Recent payment activity" actions={<Link className="text-xs font-medium text-brand-600" href="/portal/payments">View all</Link>} />
+          <ul className="mt-3 divide-y divide-slate-100">
+            {(payments.data?.items ?? []).map((p) => <li key={p.id} className="flex items-center justify-between px-5 py-3 text-sm"><span><b className="font-medium">{money(p.amount)}</b><span className="block text-xs text-ink-muted">{p.invoiceNumber} · {p.method === "simulator" ? "Payment simulator" : p.method.replace("_", " ")} · {p.reference}</span></span><span className="text-xs text-ink-muted">{date(p.date)}</span></li>)}
+            {payments.data && !payments.data.items.length && <li><EmptyState title="No payments yet" description="Payments will appear here after an invoice is settled." /></li>}
           </ul>
         </Card>
       </div>
