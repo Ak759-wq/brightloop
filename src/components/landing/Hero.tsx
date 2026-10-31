@@ -156,7 +156,10 @@ export function Hero({ signedIn, dashboardHref }: { signedIn: boolean; dashboard
             {signedIn ? "Open dashboard" : "Start for free"} <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
           {!signedIn && (
-            <Link href="/login" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white backdrop-blur transition hover:bg-white/10">Sign in</Link>
+            <>
+              <Link href="/customer/login" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white backdrop-blur transition hover:bg-white/10">Customer sign in</Link>
+              <Link href="/team/login" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white backdrop-blur transition hover:bg-white/10">Admin / Staff</Link>
+            </>
           )}
         </div>
         <div className="hero-fade mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-400" style={{ animationDelay: "800ms" }}>
