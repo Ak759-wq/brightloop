@@ -152,7 +152,7 @@ export function Hero({ signedIn, dashboardHref }: { signedIn: boolean; dashboard
           Plans, subscriptions, GST invoices, payments and revenue analytics in one place. Brightloop bills on schedule, collects, retries and reports, so you never touch a spreadsheet again.
         </p>
         <div className="hero-fade mt-9 flex flex-wrap items-center justify-center gap-3" style={{ animationDelay: "680ms" }}>
-          <Link href={signedIn ? dashboardHref : "/register"} className="hero-cta group relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-navy-900 transition hover:-translate-y-0.5">
+          <Link href={signedIn ? dashboardHref : "/choose-login"} className="hero-cta group relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-navy-900 transition hover:-translate-y-0.5">
             {signedIn ? "Open dashboard" : "Start for free"} <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
           {!signedIn && (
