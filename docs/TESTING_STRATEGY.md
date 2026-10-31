@@ -10,7 +10,7 @@
 | Static | ESLint (next/core-web-vitals), `tsc --noEmit` strict | Every commit and CI | `.github/workflows/ci.yml` |
 
 ## Results at hand-off
-- Vitest: **121 / 121 passing** (108 finance + 13 integration).
+- Vitest: **122 / 122 passing** (108 finance + 14 integration, incl. remote-seed idempotency).
 - API smoke: **48 / 48 passing** (local auth mode).
 - Lint: clean. Typecheck: clean. `next build`: succeeds.
 
