@@ -6,7 +6,13 @@ One platform that runs the whole life of a subscription business: products and p
 - **Staff** handle customers, quotations, subscriptions, invoices and payments with limited access.
 - **Customers** use a self-service portal to subscribe, upgrade, pause, cancel, pay and track usage.
 
-> Money is stored as integer **paise**. Every financial rule lives in a framework-free engine (`src/lib/finance`) with **108 audited unit tests** plus integration and API smoke tests. See [docs/FINANCIAL_AUDIT_REPORT.md](docs/FINANCIAL_AUDIT_REPORT.md).
+> Money is stored as integer **paise**. Every financial rule lives in a framework-free engine (`src/lib/finance`) with **132 automated tests** (finance engine, billing integration, assistant, webhook security) plus API smoke tests. See [docs/FINANCIAL_AUDIT_REPORT.md](docs/FINANCIAL_AUDIT_REPORT.md).
+
+**Live:** https://brightloop-zeta.vercel.app · Sign in with Google or email. Demo logins: `admin@brightloop.demo / Admin@12345`, `staff@brightloop.demo / Staff@12345`, `customer@brightloop.demo / Customer@123`.
+
+## AI assistant with your own key
+
+Open **AI Assistant** → *Use your own AI key*, choose **OpenAI**, **Google Gemini** or **OpenRouter**, paste a key and optionally a model. The key is kept only in your browser (localStorage), sent over HTTPS with each question, used for that request and never stored or logged on the server. The model only chooses which whitelisted, permission-checked query tool to run; every number in an answer comes from that tool. Without any key the assistant falls back to a deterministic intent parser.
 
 ## Stack
 
@@ -41,7 +47,7 @@ The login page has one-click buttons for each. With Firebase Auth configured, th
 | `CRON_SECRET` | Yes (production) | Shared secret: sent by Vercel Cron as `Authorization: Bearer …` or by GitHub Actions as `x-cron-secret`; also protects `POST /api/admin/seed`. |
 | `LOCAL_AUTH_SECRET` | Local auth only | Signs local session tokens. |
 | `LOCAL_DATA_DIR` | Optional | Local store directory (default `.data`, `/tmp/brightloop` on Vercel). |
-| `OPENAI_API_KEY` / `OPENAI_MODEL` / `GEMINI_API_KEY` | Optional | Lets an LLM *choose* the assistant's whitelisted tool. Numbers always come from tools. |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` / `GEMINI_API_KEY` | Optional | Server-wide default model for the assistant. Users can also add their own key in the app (see below). |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` | Optional | Razorpay adapter (orders + verified webhooks). Until set, the labelled **Payment Simulator** is used. |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Optional | Real invoice emails. Without it, "Send" is logged as a customer notification and labelled as such. |
 
@@ -119,4 +125,4 @@ On Vercel, `vercel.json` schedules `GET /api/billing/run` daily (Bearer `CRON_SE
 
 - [PRD](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [ER diagram](docs/ER_DIAGRAM.md) · [Permissions](docs/PERMISSIONS.md) · [API spec](docs/API_SPEC.md) · [UI page map](docs/UI_PAGE_MAP.md)
 - [Finance rules](docs/FINANCE_RULES.md) · [Metrics](docs/METRICS.md) · [Financial audit report](docs/FINANCIAL_AUDIT_REPORT.md)
-- [Testing strategy](docs/TESTING_STRATEGY.md) · [Requirements checklist](docs/REQUIREMENTS_CHECKLIST.md) · [UI audit](docs/UI_AUDIT.md) · [Roadmap](docs/ROADMAP.md)
+- [Testing strategy](docs/TESTING_STRATEGY.md) · [Requirements checklist](docs/REQUIREMENTS_CHECKLIST.md) · [Hackathon audit](docs/HACKATHON_AUDIT.md) · [UI audit](docs/UI_AUDIT.md) · [Roadmap](docs/ROADMAP.md)

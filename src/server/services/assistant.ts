@@ -131,43 +131,64 @@ export async function runTool(ctx: Ctx, tool: ToolName, question: string): Promi
   }
 }
 
-/** Optional LLM tool selection. Returns null on any failure (deterministic parser is used instead). */
-async function llmPickTool(question: string, tools: ToolName[]): Promise<ToolName | null> {
-  const prompt = `Pick exactly one tool for this billing question. Tools: ${tools.join(", ")}. Reply with only the tool name.\nQuestion: ${question}`;
-  try {
-    if (process.env.OPENAI_API_KEY) {
-      const r = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4o-mini", temperature: 0, messages: [{ role: "user", content: prompt }] }),
-        signal: AbortSignal.timeout(8000),
-      });
-      const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
-      const t = j.choices?.[0]?.message?.content?.trim() as ToolName;
-      return tools.includes(t) ? t : null;
-    }
-    if (process.env.GEMINI_API_KEY) {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        signal: AbortSignal.timeout(8000),
-      });
-      const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-      const t = j.candidates?.[0]?.content?.parts?.[0]?.text?.trim() as ToolName;
-      return tools.includes(t) ? t : null;
-    }
-  } catch {
-    return null;
-  }
+/** A user-supplied model key. Used for this one request only: never stored, logged or returned. */
+export interface UserLlm { provider: "openai" | "gemini" | "openrouter"; apiKey: string; model?: string }
+
+const DEFAULT_MODEL = { openai: "gpt-4o-mini", gemini: "gemini-2.0-flash", openrouter: "openai/gpt-4o-mini" } as const;
+
+function resolveLlm(user?: UserLlm | null): UserLlm | null {
+  if (user?.apiKey) return user;
+  if (process.env.OPENAI_API_KEY) return { provider: "openai", apiKey: process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL };
+  if (process.env.GEMINI_API_KEY) return { provider: "gemini", apiKey: process.env.GEMINI_API_KEY };
   return null;
 }
 
-export async function ask(ctx: Ctx, question: string) {
+/** Optional LLM tool selection. Returns null on any failure (deterministic parser is used instead). */
+export async function llmPickTool(question: string, tools: ToolName[], llm: UserLlm | null): Promise<{ tool: ToolName | null; error?: string }> {
+  if (!llm) return { tool: null };
+  const prompt = `Pick exactly one tool for this billing question. Tools: ${tools.join(", ")}. Reply with only the tool name.\nQuestion: ${question}`;
+  const model = llm.model?.trim() || DEFAULT_MODEL[llm.provider];
+  try {
+    let text: string | undefined;
+    if (llm.provider === "gemini") {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": llm.apiKey },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0 } }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!r.ok) return { tool: null, error: `Gemini returned ${r.status}` };
+      const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+      text = j.candidates?.[0]?.content?.parts?.[0]?.text;
+    } else {
+      const url = llm.provider === "openrouter" ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${llm.apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, temperature: 0, messages: [{ role: "user", content: prompt }] }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!r.ok) return { tool: null, error: `${llm.provider === "openai" ? "OpenAI" : "OpenRouter"} returned ${r.status}` };
+      const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
+      text = j.choices?.[0]?.message?.content;
+    }
+    const t = text?.trim().replace(/[`'".]/g, "") as ToolName;
+    return { tool: tools.includes(t) ? t : null };
+  } catch {
+    return { tool: null, error: "The AI provider did not respond" };
+  }
+}
+
+export async function ask(ctx: Ctx, question: string, userLlm?: UserLlm | null) {
   const role = ctx.actor.role === "system" ? "admin" : ctx.actor.role;
   const tools = toolsFor(role);
-  const llm = await llmPickTool(question, tools);
-  const tool = llm ?? parseIntent(question, role);
+  const llm = resolveLlm(userLlm);
+  const picked = await llmPickTool(question, tools, llm);
+  const tool = picked.tool ?? parseIntent(question, role);
   const res = await runTool(ctx, tool, question);
-  return { ...res, engine: llm ? "llm-tool-selection" : "deterministic-parser" };
+  return {
+    ...res,
+    engine: picked.tool ? `llm-tool-selection (${llm!.provider}${userLlm?.apiKey ? ", your key" : ""})` : "deterministic-parser",
+    llmError: picked.error,
+  };
 }
