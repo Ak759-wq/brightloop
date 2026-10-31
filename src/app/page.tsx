@@ -1,13 +1,79 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { BarChart3, CalendarClock, CreditCard, ReceiptIndianRupee, ShieldCheck, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/client/auth";
 import { homeFor } from "@/components/shell/nav";
-import { Spinner } from "@/components/ui/primitives";
+import { Logo } from "@/components/shell/Logo";
+import { MeadowHero } from "@/components/landing/MeadowHero";
 
-export default function Home() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-  useEffect(() => { if (!loading) router.replace(user ? homeFor(user.role) : "/login"); }, [loading, user, router]);
-  return <div className="flex min-h-screen items-center justify-center"><Spinner /></div>;
+const FEATURES = [
+  { icon: CalendarClock, title: "Billing that runs itself", body: "Daily, weekly, monthly or yearly cycles with month-end and leap-year handling. Idempotent runs, never billed twice." },
+  { icon: ReceiptIndianRupee, title: "GST-ready invoices", body: "CGST + SGST or IGST from place of supply, HSN/SAC codes, credit notes and clean PDF-ready invoices." },
+  { icon: CreditCard, title: "Payments & dunning", body: "Partial payments, refunds, retries and reminders, with every rupee reconciled against its invoice." },
+  { icon: BarChart3, title: "Revenue intelligence", body: "MRR, ARR, NRR, churn and receivables ageing — computed from the ledger, not a spreadsheet." },
+  { icon: Sparkles, title: "AI copilot", body: "Ask “who is overdue this week?” and get answers scoped to what your role is allowed to see." },
+  { icon: ShieldCheck, title: "Roles & audit trail", body: "Admin, staff and customer portals with permission checks and an immutable audit log." },
+];
+
+export default function Landing() {
+  const { user } = useAuth();
+  const dash = user ? homeFor(user.role) : "/login";
+  return (
+    <div className="min-h-screen bg-[#faf0f4] text-[#3a1b2d]">
+      <header className="absolute inset-x-0 top-0 z-40">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <Link href="/" aria-label="Brightloop home"><Logo dark /></Link>
+          <div className="hidden items-center gap-8 text-sm text-[#6b4a5c] md:flex">
+            <a href="#features" className="hover:text-[#3a1b2d]">Features</a>
+            <a href="#how" className="hover:text-[#3a1b2d]">How it works</a>
+          </div>
+          <div className="flex items-center gap-2">
+            {user ? (
+              <Link href={dash} className="rounded-full bg-[#3a1b2d] px-4 py-2 text-sm font-medium text-white hover:bg-[#2a1220]">Dashboard</Link>
+            ) : (
+              <>
+                <Link href="/login" className="rounded-full px-4 py-2 text-sm font-medium hover:bg-white/60">Sign in</Link>
+                <Link href="/register" className="rounded-full bg-[#3a1b2d] px-4 py-2 text-sm font-medium text-white hover:bg-[#2a1220]">Get started</Link>
+              </>
+            )}
+          </div>
+        </nav>
+      </header>
+
+      <MeadowHero signedIn={!!user} dashboardHref={dash} />
+
+      <section id="features" className="mx-auto max-w-6xl px-6 py-24">
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-[#ad4278]">Everything a subscription business runs on</p>
+        <h2 className="mx-auto mt-3 max-w-2xl text-center text-3xl font-medium tracking-tight sm:text-4xl">From first quote to recognised revenue, in one place.</h2>
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="rounded-2xl border border-[#f3d8e4] bg-white/80 p-6 shadow-[0_1px_0_rgba(58,27,45,0.04)] transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rose-900/5">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f3d8e4] text-[#ad4278]"><f.icon className="h-5 w-5" /></span>
+              <h3 className="mt-4 font-medium">{f.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-[#6b4a5c]">{f.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="how" className="mx-auto max-w-6xl px-6 pb-24">
+        <div className="grid gap-8 rounded-[2rem] bg-[#3a1b2d] p-10 text-white sm:p-14 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+          <div>
+            <h2 className="text-3xl font-medium tracking-tight sm:text-4xl">Plant a plan. Watch it compound.</h2>
+            <p className="mt-4 max-w-lg text-[#e7cbd8]">Create products and pricing, send a quotation, confirm the subscription. Brightloop invoices on schedule, collects, retries and reports — so revenue keeps growing without you watching it.</p>
+          </div>
+          <ol className="space-y-4 text-sm">
+            {["Build your catalog and plans", "Quote, confirm and activate", "Invoices and GST go out automatically", "Track MRR, churn and collections"].map((t, i) => (
+              <li key={t} className="flex items-center gap-4"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 font-medium">{i + 1}</span>{t}</li>
+            ))}
+          </ol>
+        </div>
+        <div className="mt-12 flex flex-col items-center gap-4 text-center">
+          <Link href={user ? dash : "/register"} className="rounded-full bg-[#3a1b2d] px-7 py-3 text-sm font-medium text-white shadow-lg shadow-rose-900/20 hover:bg-[#2a1220]">{user ? "Open dashboard" : "Start for free"}</Link>
+        </div>
+      </section>
+
+      <footer className="border-t border-[#f3d8e4] py-8 text-center text-xs text-[#8a6b7b]">© {new Date().getFullYear()} Brightloop · Subscriptions, billing &amp; revenue intelligence</footer>
+    </div>
+  );
 }

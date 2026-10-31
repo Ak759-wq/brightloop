@@ -41,6 +41,9 @@ interface AuthCtx {
   org: OrgInfo | null;
   modes: Modes | null;
   signIn: (email: string, password: string) => Promise<SessionInfo>;
+  /** Google sign-in (Firebase mode). New Google users get a customer account; invited staff/admins are linked by email. */
+  signInWithGoogle: () => Promise<SessionInfo>;
+  googleAvailable: boolean;
   signUp: (input: { name: string; email: string; password: string; company?: string; placeOfSupply?: string }) => Promise<SessionInfo>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<string>;
@@ -59,6 +62,10 @@ function friendlyFirebaseError(code: string): string {
   if (code.includes("too-many-requests")) return "Too many attempts. Try again in a few minutes.";
   if (code.includes("network")) return "Network error. Check your connection.";
   if (code.includes("weak-password")) return "Password is too weak";
+  if (code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request")) return "Google sign-in was cancelled";
+  if (code.includes("account-exists-with-different-credential")) return "This email already has a password login. Sign in with your password instead.";
+  if (code.includes("unauthorized-domain")) return "Google sign-in isn't enabled for this domain yet";
+  if (code.includes("operation-not-allowed")) return "Google sign-in isn't enabled for this workspace yet";
   return "Sign-in failed. Please try again.";
 }
 
@@ -107,6 +114,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     org: me?.org ?? null,
     modes: me?.modes ?? null,
     refresh: async () => { await loadMe(); },
+    googleAvailable: firebaseEnabled,
+    async signInWithGoogle() {
+      if (!firebaseEnabled) throw new Error("Google sign-in needs Firebase to be configured");
+      explicitFlow = true;
+      try {
+        const { GoogleAuthProvider, signInWithPopup, signInWithRedirect } = await import("firebase/auth");
+        const auth = firebaseAuth();
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
+        let displayName: string | null = null;
+        try {
+          const cred = await signInWithPopup(auth, provider);
+          displayName = cred.user.displayName;
+        } catch (e) {
+          const code = (e as { code?: string }).code ?? "";
+          if (code.includes("popup-blocked")) { await signInWithRedirect(auth, provider); throw new Error("Redirecting to Google…"); }
+          throw new Error(friendlyFirebaseError(code));
+        }
+        let m = await loadMe();
+        if (!m.session) {
+          await api("/api/auth/bootstrap", { method: "POST", body: displayName && displayName.trim().length >= 2 ? { name: displayName.trim().slice(0, 80) } : {} });
+          m = await loadMe();
+        }
+        return requireSession(m);
+      } finally { explicitFlow = false; }
+    },
     async signIn(email, password) {
       email = email.trim().toLowerCase();
       if (firebaseEnabled) {

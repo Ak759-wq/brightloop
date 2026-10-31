@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { useAuth } from "@/lib/client/auth";
+import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
+import { homeFor } from "@/components/shell/nav";
 import { registerSchema } from "@/lib/schemas";
 import { STATE_OPTIONS } from "@/lib/client/format";
 import { Button, ErrorNote, Field, Input, Select } from "@/components/ui/primitives";
@@ -17,6 +19,7 @@ const RULES = [
 
 export default function RegisterPage() {
   const { signUp } = useAuth();
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const router = useRouter();
   const [f, setF] = useState({ name: "", email: "", password: "", company: "", placeOfSupply: "29" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -42,7 +45,12 @@ export default function RegisterPage() {
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
       <p className="mt-1 text-sm text-ink-muted">Manage your subscriptions and invoices without emailing anyone.</p>
-      <form className="mt-8 space-y-4" onSubmit={submit} noValidate>
+      <div className="mt-8">
+        <GoogleButton label="Sign up with Google" onDone={(s) => router.replace(homeFor(s.role))} onError={(m) => setGoogleError(m)} />
+        {googleError && <p className="mt-2 text-sm text-red-600">{googleError}</p>}
+      </div>
+      <OrDivider />
+      <form className="space-y-4" onSubmit={submit} noValidate>
         {error && <ErrorNote message={error} />}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Full name" id="name" error={errors.name}><Input id="name" value={f.name} onChange={set("name")} invalid={!!errors.name} autoComplete="name" /></Field>

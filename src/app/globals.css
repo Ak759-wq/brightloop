@@ -18,3 +18,10 @@ body { @apply bg-canvas text-ink; font-feature-settings: "cv11", "ss01"; }
   main { padding: 0 !important; max-width: none !important; }
   .print-area { box-shadow: none !important; border: none !important; }
 }
+
+/* ---- landing meadow hero ---- */
+@keyframes lml-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+@keyframes lml-twinkle { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82); } }
+.lml-coin { animation: lml-float 6s ease-in-out infinite; }
+.lml-coin-2 { animation-duration: 7.5s; animation-delay: -2s; }
+@media (prefers-reduced-motion: reduce) { .lml-coin, .lml-coin-2 { animation: none; } }
