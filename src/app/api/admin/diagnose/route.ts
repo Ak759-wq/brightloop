@@ -20,7 +20,7 @@ export async function GET(req: Request) {
   const out: Record<string, unknown> = { mode: backendMode() };
   const email = url.searchParams.get("email");
   if (email) {
-    const found = await store.query<Profile>("profiles", [["email", "==", email.toLowerCase()]], 1);
+    const found = await store.all<Profile>("profiles", [["email", "==", email.toLowerCase()]]);
     const p = found[0];
     out.profile = p ? { uid: p.uid, role: p.role, orgId: p.orgId, customerId: p.customerId ?? null } : null;
     if (p) {
