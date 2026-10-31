@@ -29,7 +29,7 @@ The local validation suite passes. Production is **not fully verified** because 
 | Medium | Demo account credentials are present in seed code | REQUIRES MANUAL CONFIGURATION | Rotate/disable demo accounts before public production use |
 | Medium | Firestore rules were not emulator-tested in this environment | FIXED BUT NOT FULLY VERIFIED | Rules remain restrictive; emulator test environment is still required |
 | Medium | Hosted 3,000-subscription performance was not measured | NOT FIXED | Local integration performance exists; hosted Firestore load test remains required |
-| Low | Browser E2E suite is not configured in the repository | NOT FIXED | No Playwright config or E2E test directory was present |
+| Low | Browser E2E coverage was missing | FIXED BUT NOT FULLY VERIFIED | Added localhost-only Playwright config and authentication/customer-isolation journeys; browser execution remains pending |
 
 ## Files changed
 
@@ -43,6 +43,10 @@ The local validation suite passes. Production is **not fully verified** because 
 - `src/server/services/payments.ts`
 - `src/server/services/invoices.ts`
 - `tests/security/hardening.test.ts`
+- `playwright.config.ts`
+- `tests/e2e/auth-and-isolation.spec.ts`
+- `docs/FIRESTORE_EMULATOR_TEST_PLAN.md`
+- `docs/LOAD_TEST_PLAN.md`
 - `docs/FINAL_PRODUCTION_READINESS_REPORT.md`
 
 ## Security review
@@ -65,10 +69,12 @@ Service-account credentials, Resend keys, Razorpay secrets and local auth secret
 | `npm audit --omit=dev` | Completed — 26 findings: 2 critical, 10 high, 14 moderate |
 | Security hardening tests | Passed — malformed tokens, production auth guard, duplicate payment reference |
 | Webhook signature tests | Passed — valid, tampered, missing and malformed signatures |
+| `npm run test:e2e -- --list` | Passed — 2 isolated localhost tests discovered |
+| `npm run test:e2e` | Not executed — Chromium binary is not installed in the runner |
 
 ## Tests not executed
 
-- Playwright browser journeys: no Playwright configuration or E2E suite exists.
+- Playwright browser journeys were added and discovered, but execution stopped before browser launch because the Chromium binary is not installed in the runner.
 - Firebase Auth against real Google identity endpoints.
 - Firestore emulator security-rule tests.
 - Razorpay live/test API or webhook delivery.
@@ -120,7 +126,10 @@ Use a verified sending domain/address. Without Resend, Brightloop records a warn
 - [ ] Upgrade direct vulnerable dependencies in a dedicated compatibility change, starting with Next.js, jsPDF, Firebase and Zod; rerun the full suite after each upgrade.
 - [ ] Run Firestore emulator rules tests for customer isolation and financial-document immutability.
 - [ ] Run a non-production 3,000-subscription Firestore load test and record endpoint timings.
-- [ ] Add isolated Playwright tests for admin, customer and cross-customer journeys.
+- [x] Add isolated localhost-only Playwright tests for invalid login, customer routing and cross-customer isolation.
+- [ ] Execute the Playwright suite in CI or an isolated local environment with Chromium installed.
+- [ ] Execute the Firestore emulator plan in an isolated Firebase project.
+- [ ] Execute the hosted Firestore load-test plan and record p95 measurements.
 - [ ] Rotate or disable the seeded `@brightloop.demo` accounts before public production exposure.
 - [ ] Verify Firebase Authorized Domains and Google provider configuration.
 - [ ] Verify Vercel Production environment variables and cron execution.
