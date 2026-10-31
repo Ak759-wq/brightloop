@@ -192,6 +192,7 @@ export async function cancelInvoice(ctx: Ctx, id: string, reason: string) {
 export async function sendInvoice(ctx: Ctx, id: string) {
   const inv = await getInvoice(ctx, id);
   if (inv.status === "draft" || inv.status === "cancelled") throw new DomainError("Confirm the invoice before sending it");
+  if (inv.sentAt) return { channel: "email_sent" as const, detail: `Invoice ${inv.number} was already emailed to ${inv.customer.email}` };
   let channel: "email_sent" | "email_logged" = "email_logged";
   let detail = "Email delivery is unavailable because RESEND_API_KEY is not configured. An in-app notification was recorded instead.";
   if (process.env.RESEND_API_KEY) {

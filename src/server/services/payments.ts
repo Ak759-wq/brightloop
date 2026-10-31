@@ -20,6 +20,10 @@ export async function recordPayment(ctx: Ctx, input: RecordPaymentInput) {
     const inv = await tx.get<Invoice>("invoices", input.invoiceId);
     if (!inv || inv.orgId !== ctx.org.id) throw notFound("Invoice");
     if (ctx.actor.role === "customer" && inv.customerId !== ctx.actor.customerId) throw notFound("Invoice");
+    if (input.reference) {
+      const existing = await tx.query<Payment>("payments", [["orgId", "==", ctx.org.id], ["reference", "==", input.reference]], 1);
+      if (existing[0]) return { duplicate: true, payment: existing[0], invoice: inv };
+    }
     validatePaymentAmount(input.amount, inv);
     const n = await readCounter(tx, ctx.org.id, "pay");
     const amountPaid = inv.amountPaid + input.amount;
@@ -35,8 +39,9 @@ export async function recordPayment(ctx: Ctx, input: RecordPaymentInput) {
     tx.create("payment_attempts", newId("pat_"), { ...stamp(ctx.org.id), invoiceId: inv.id, invoiceNumber: inv.number, customerId: inv.customerId, status: "succeeded", amount: input.amount, method: input.method, attempt: inv.failedAttempts + 1 });
     tx.update("invoices", inv.id, { amountPaid, status, updatedAt: nowISO(), nextRetryOn: status === "paid" ? null : inv.nextRetryOn ?? null, ...(status === "paid" ? { paidAt: nowISO() } : {}) });
     writeCounter(tx, ctx.org.id, "pay", n + 1);
-    return { payment, invoice: { ...next, status } as Invoice };
+    return { duplicate: false, payment, invoice: { ...next, status } as Invoice };
   });
+  if (res.duplicate) return res;
   await audit(ctx, "payment.recorded", "payments", res.payment.id, { note: `${res.payment.reference}: ${input.amount} on ${res.invoice.number} via ${input.method}` });
   await emit(ctx, "payment.succeeded", { customerId: res.invoice.customerId, amount: input.amount, entity: "payments", entityId: res.payment.id, label: res.invoice.number });
   await notify(ctx, { audience: "customer", customerId: res.invoice.customerId, title: `Payment received`, body: `₹${(input.amount / 100).toLocaleString("en-IN")} received for ${res.invoice.number}${res.invoice.status === "paid" ? " – fully paid. Thank you!" : `. Outstanding ₹${(outstanding(res.invoice) / 100).toLocaleString("en-IN")}.`}`, level: "success", link: `/portal/invoices/${res.invoice.id}` });

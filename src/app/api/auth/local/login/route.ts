@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 import { z } from "zod";
-import { authMode, signLocalToken, verifyPassword } from "@/server/auth";
+import { authDiagnostic, authMode, signLocalToken, verifyPassword } from "@/server/auth";
 import { toResponse, HttpError } from "@/server/http";
 import { getStore } from "@/server/store";
 import { entryMismatchMessage, roleMatchesEntry } from "@/lib/auth-entry";
@@ -12,6 +12,7 @@ const schema = z.object({ email: z.string().optional(), password: z.string().opt
 export async function POST(req: Request) {
   try {
     if (authMode() !== "local") throw new HttpError(400, "Local auth is disabled");
+    if (authDiagnostic()) throw new HttpError(503, authDiagnostic()!);
     const { email, password, entry } = schema.parse(await req.json());
     const key = (email ?? "").trim().toLowerCase();
     const a = attempts.get(key);

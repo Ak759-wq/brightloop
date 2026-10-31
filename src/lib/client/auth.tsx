@@ -223,8 +223,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try { await sendPasswordResetEmail(firebaseAuth(), email.trim().toLowerCase()); } catch { /* do not reveal whether the account exists */ }
         return "If that email has an account, a reset link is on its way. Check your inbox (and spam).";
       }
-      const r = await api<{ message: string }>("/api/auth/local/reset-request", { body: { email } });
-      return `${r.message} (Local mode: email delivery is not configured, so the link is printed in the server log.)`;
+      const r = await api<{ message: string; resetLink?: string }>("/api/auth/local/reset-request", { body: { email } });
+      return r.resetLink ? `${r.message} Open this link: ${r.resetLink}` : r.message;
     },
   }), [loading, me, loadMe]);
 
