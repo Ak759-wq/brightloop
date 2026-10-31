@@ -16,10 +16,19 @@ export class FileStore implements Store {
   private flushTimer: NodeJS.Timeout | null = null;
   private file: string;
 
-  constructor(dir: string) {
-    mkdirSync(dir, { recursive: true });
-    this.file = join(dir, "brightloop-db.json");
-    this.db = existsSync(this.file) ? (JSON.parse(readFileSync(this.file, "utf8")) as DB) : {};
+  private persist: boolean;
+
+  /** `dir = null` creates a purely in-memory store (never touches disk). */
+  constructor(dir: string | null) {
+    this.persist = dir !== null;
+    this.file = dir ? join(dir, "brightloop-db.json") : "";
+    if (dir) mkdirSync(dir, { recursive: true });
+    this.db = dir && existsSync(this.file) ? (JSON.parse(readFileSync(this.file, "utf8")) as DB) : {};
+  }
+
+  /** Snapshot of every collection (used to copy a simulated seed into Firestore). */
+  dump(): Record<string, Doc[]> {
+    return Object.fromEntries(Object.entries(this.db).map(([col, docs]) => [col, Object.values(docs)]));
   }
 
   isEmpty() {
@@ -31,11 +40,12 @@ export class FileStore implements Store {
   }
 
   private scheduleFlush() {
-    if (this.flushTimer) return;
+    if (!this.persist || this.flushTimer) return;
     this.flushTimer = setTimeout(() => this.flushNow(), 50);
   }
 
   flushNow() {
+    if (!this.persist) return;
     if (this.flushTimer) clearTimeout(this.flushTimer);
     this.flushTimer = null;
     const tmp = this.file + ".tmp";

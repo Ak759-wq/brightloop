@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { razorpay } from "@/server/payments/razorpay";
 import { getStore } from "@/server/store";
 import { makeCtx } from "@/server/services/core";

@@ -1,4 +1,5 @@
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 import { forbidden, route, body } from "@/server/http";
 import { ctxFor } from "@/server/ctx";
 import { getSub, transition } from "@/server/services/subscriptions";

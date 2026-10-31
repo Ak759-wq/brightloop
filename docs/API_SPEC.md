@@ -40,6 +40,8 @@ Readable: every collection in the permission matrix (customers are auto-scoped t
 ## Billing, usage, analytics, AI, admin
 | Method | Path | Who |
 |---|---|---|
+| GET | `/api/billing/run` | Vercel Cron: `Authorization: Bearer $CRON_SECRET` → same summary as POST |
+| POST | `/api/admin/seed?bulk=N` | `x-cron-secret: $CRON_SECRET` → idempotent demo seed into Firestore (+ Firebase Auth users); `{ seeded, reason?, collections?, authUsers? }` |
 | POST | `/api/billing/run` | `x-cron-secret: $CRON_SECRET` (scheduler) or admin session → run summary `{ status, invoicesCreated, duplicates, overdueMarked, dunningReminders, renewalReminders, failed, errors, durationMs }` |
 | POST | `/api/usage` | `{ subscriptionId, metric, quantity, idempotencyKey? }` → 402 when blocked by policy |
 | POST | `/api/credits/topup` | `{ customerId?, credits, note? }` |

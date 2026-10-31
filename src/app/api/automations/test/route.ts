@@ -1,4 +1,5 @@
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 import { route, body, notFound } from "@/server/http";
 import { ctxFor } from "@/server/ctx";
 import { emit, type EventType } from "@/server/services/events";

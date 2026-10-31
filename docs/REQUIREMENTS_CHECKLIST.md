@@ -51,6 +51,8 @@ Verification environment: local auth + local JSON store build. Firebase Auth/Fir
 | Billing runner: idempotency, advance date, jobs/events log, retry/failed tracking, lock | Verified | integration + smoke; Automations → Billing jobs |
 | POST /api/billing/run with CRON_SECRET or admin | Verified | smoke (no secret → 401, secret → 200) |
 | GitHub Actions billing cron + CI | Implemented | workflows written; not executed (no push from sandbox) |
+| Vercel deploy: `vercel.json` daily cron (GET + Bearer secret), region bom1 | Implemented | build verified with only Firebase + CRON_SECRET env; cron not exercised |
+| Protected idempotent `POST /api/admin/seed` (Firestore + Firebase Auth users) | Tested (local) | seed-and-copy logic tested against a second FileStore in integration tests; Firestore/Firebase Auth path not executable from sandbox |
 | Demo clock (demo orgs only, labelled, real timestamps untouched) | Implemented | Settings → Demo clock; badge |
 | Payment Simulator (success / fail with reason / partial) | Verified | smoke |
 | Razorpay adapter + webhook signature verification | Implemented | real HMAC check (smoke: bad signature → 401); order creation untested without keys |

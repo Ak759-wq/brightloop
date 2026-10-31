@@ -1,4 +1,5 @@
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 import { lineInputSchema } from "@/lib/schemas";
 import { forbidden, route, body } from "@/server/http";
 import { ctxFor } from "@/server/ctx";

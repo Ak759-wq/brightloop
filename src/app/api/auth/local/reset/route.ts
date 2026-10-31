@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { createHash } from "node:crypto";
 import { passwordSchema } from "@/lib/schemas";
 import { hashPassword } from "@/server/auth";

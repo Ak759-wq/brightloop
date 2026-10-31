@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { authMode, signLocalToken, verifyPassword } from "@/server/auth";
 import { toResponse, HttpError } from "@/server/http";
 import { getStore } from "@/server/store";

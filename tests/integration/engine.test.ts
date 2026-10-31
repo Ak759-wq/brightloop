@@ -146,3 +146,23 @@ describe("seeded system (integration, local store)", () => {
     expect(realToday()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });
+
+describe("remote seed (copy into a target store)", () => {
+  it("seeds once, is idempotent, and creates auth users through the callback", async () => {
+    const { seedRemote } = await import("@/server/seedFirestore");
+    const target = new FileStore(mkdtempSync(join(tmpdir(), "bl-target-")));
+    const created: string[] = [];
+    const r1 = await seedRemote(target, { createAuthUser: async (email) => { created.push(email); return `uid_${email.split("@")[0]}`; } });
+    expect(r1.seeded).toBe(true);
+    expect(created.sort()).toEqual(["admin@brightloop.demo", "customer@brightloop.demo", "staff@brightloop.demo"]);
+    expect(await target.get("profiles", "uid_admin")).toMatchObject({ role: "admin", claimable: false });
+    expect(await target.count("local_auth")).toBe(0);
+    expect(await target.count("invoices")).toBeGreaterThan(50);
+    const r2 = await seedRemote(target, {});
+    expect(r2.seeded).toBe(false);
+    const r3 = await seedRemote(target, { bulk: 50 });
+    expect(r3.seeded).toBe(true);
+    const r4 = await seedRemote(target, { bulk: 50 });
+    expect(r4.seeded).toBe(false);
+  }, 60_000);
+});

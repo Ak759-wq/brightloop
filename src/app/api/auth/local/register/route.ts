@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { registerSchema } from "@/lib/schemas";
 import { authMode, DEFAULT_ORG_ID, hashPassword, signLocalToken } from "@/server/auth";
 import { toResponse, HttpError } from "@/server/http";

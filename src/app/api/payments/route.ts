@@ -1,4 +1,5 @@
 import { paymentSchema } from "@/lib/schemas";
+export const dynamic = "force-dynamic";
 import { route, body } from "@/server/http";
 import { ctxFor } from "@/server/ctx";
 import { recordPayment } from "@/server/services/payments";

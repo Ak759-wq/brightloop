@@ -1,4 +1,5 @@
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 import { route, body } from "@/server/http";
 import { ctxFor } from "@/server/ctx";
 import { audit, nowISO } from "@/server/services/core";

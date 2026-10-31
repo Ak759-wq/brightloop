@@ -38,7 +38,7 @@ The login page has one-click buttons for each. With Firebase Auth configured, th
 |---|---|---|
 | `NEXT_PUBLIC_FIREBASE_API_KEY`, `_AUTH_DOMAIN`, `_PROJECT_ID`, `_STORAGE_BUCKET`, `_MESSAGING_SENDER_ID`, `_APP_ID` | For Firebase Auth | Public web config. When empty, built-in **local auth** (scrypt hashes, signed tokens) is used. |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | For Firestore | Service-account JSON on one line. Enables Firestore persistence, admin staff creation and the Firestore seed. Without it data lives in the local JSON store (not durable on serverless). |
-| `CRON_SECRET` | Yes (production) | Shared secret the scheduler sends as `x-cron-secret` to `POST /api/billing/run`. |
+| `CRON_SECRET` | Yes (production) | Shared secret: sent by Vercel Cron as `Authorization: Bearer …` or by GitHub Actions as `x-cron-secret`; also protects `POST /api/admin/seed`. |
 | `LOCAL_AUTH_SECRET` | Local auth only | Signs local session tokens. |
 | `LOCAL_DATA_DIR` | Optional | Local store directory (default `.data`, `/tmp/brightloop` on Vercel). |
 | `OPENAI_API_KEY` / `OPENAI_MODEL` / `GEMINI_API_KEY` | Optional | Lets an LLM *choose* the assistant's whitelisted tool. Numbers always come from tools. |
@@ -68,9 +68,34 @@ The login page has one-click buttons for each. With Firebase Auth configured, th
 npx firebase-tools deploy --only firestore:rules,firestore:indexes
 ```
 
+## Deploy to Vercel (recommended)
+
+Required environment variables — nothing else is needed:
+
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase console → Project settings → Your apps (web) |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Firebase console → Project settings → Service accounts → *Generate new private key*; paste the whole JSON as the value (single line is fine; `\n` in `private_key` is handled) |
+| `CRON_SECRET` | A long random string (`openssl rand -hex 32`) |
+
+Steps:
+
+1. **Firebase**: enable *Authentication → Email/Password*; create Firestore (production mode). Deploy rules and indexes once from any machine with the Firebase CLI: `npx firebase-tools login && npx firebase-tools deploy --only firestore:rules,firestore:indexes` (project `brightloop-8bc2c` from `.firebaserc`). Indexes take a few minutes to build.
+2. **Vercel**: *Add New → Project* → import the GitHub repo. Framework preset Next.js (auto). Add the env vars above for **Production** (and Preview if you use it). Deploy.
+3. **Seed the demo data into Firestore** (the service-account key only lives in Vercel, so seeding runs there):
+   ```bash
+   curl -X POST "https://<your-app>.vercel.app/api/admin/seed" -H "x-cron-secret: $CRON_SECRET"
+   # optional performance data, once:  .../api/admin/seed?bulk=3000
+   ```
+   It creates the demo org, the three demo users **in Firebase Auth** (admin/staff/customer, passwords above) with their profiles, the catalog, customers and ~9 months of simulated billing history (simulated in memory, then copied with batched writes — a few seconds). It is **idempotent**: if the demo org already exists it returns `{"seeded": false}` and changes nothing.
+4. **Scheduled billing**: `vercel.json` registers a **Vercel Cron** that calls `GET /api/billing/run` daily at 00:30 UTC (06:00 IST); Vercel sends `Authorization: Bearer $CRON_SECRET`, which the route verifies. (Hobby plan allows daily crons.) The GitHub Actions workflow `billing-cron.yml` is an alternative — keep only one scheduler enabled, although running both is safe because billing is idempotent and locked.
+5. Open the app, sign in with a demo account, and follow the walkthrough below. Run billing on demand from *Overview → Run billing now* (admin).
+
+Notes: functions run in `bom1` (Mumbai, close to Firestore `asia-south1`) per `vercel.json`. If `FIREBASE_SERVICE_ACCOUNT_JSON` is missing, the app still boots but stores data in the function's `/tmp` (labelled *Local data mode*, not durable) — set the key for real use.
+
 ## Scheduled billing
 
-`.github/workflows/billing-cron.yml` calls `POST /api/billing/run` daily at 06:00 IST with `x-cron-secret` (repository secrets `APP_URL`, `CRON_SECRET`), retrying up to 3 times. The runner takes a lock, bills every due period with an idempotency key (`subscriptionId__periodStart` is the invoice document id), advances the next billing date in the same transaction, marks overdue invoices, schedules dunning reminders and sends renewal reminders. Admins can also click **Run billing now**. `ci.yml` runs lint, typecheck, tests (+ audit report) and build on every push.
+On Vercel, `vercel.json` schedules `GET /api/billing/run` daily (Bearer `CRON_SECRET`). Alternatively `.github/workflows/billing-cron.yml` calls `POST /api/billing/run` daily at 06:00 IST with `x-cron-secret` (repository secrets `APP_URL`, `CRON_SECRET`), retrying up to 3 times. The runner takes a lock, bills every due period with an idempotency key (`subscriptionId__periodStart` is the invoice document id), advances the next billing date in the same transaction, marks overdue invoices, schedules dunning reminders and sends renewal reminders. Admins can also click **Run billing now**. `ci.yml` runs lint, typecheck, tests (+ audit report) and build on every push.
 
 ## 15-step demo walkthrough
 

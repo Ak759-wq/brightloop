@@ -1,4 +1,5 @@
 import { route } from "@/server/http";
+export const dynamic = "force-dynamic";
 import { ctxFor } from "@/server/ctx";
 import { createManualInvoice } from "@/server/services/invoices";
 

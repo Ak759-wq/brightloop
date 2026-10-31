@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { createHash, randomBytes } from "node:crypto";
 import { toResponse } from "@/server/http";
 import { getStore } from "@/server/store";

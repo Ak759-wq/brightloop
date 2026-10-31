@@ -1,4 +1,5 @@
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 import { canDo } from "@/lib/permissions";
 import { forbidden, route, body } from "@/server/http";
 import { ctxFor } from "@/server/ctx";

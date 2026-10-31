@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { z } from "zod";
 import { DEFAULT_ORG_ID, verifyBearer } from "@/server/auth";
 import { toResponse, HttpError } from "@/server/http";

@@ -1,4 +1,5 @@
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 import { emailSchema, passwordSchema } from "@/lib/schemas";
 import { authMode, hashPassword } from "@/server/auth";
 import { bad, route, body } from "@/server/http";

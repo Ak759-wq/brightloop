@@ -1,4 +1,5 @@
 import { subscriptionCreateSchema } from "@/lib/schemas";
+export const dynamic = "force-dynamic";
 import { route, body } from "@/server/http";
 import { ctxFor } from "@/server/ctx";
 import { createSubscription } from "@/server/services/subscriptions";
