@@ -8,7 +8,7 @@ All endpoints are JSON. Authenticated requests send `Authorization: Bearer <toke
 | GET | `/api/me` | any | `{ session, org, modes }` (modes = auth/backend/email/razorpay/llm) |
 | POST | `/api/auth/bootstrap` | Firebase user | Creates/claims profile after sign-up/sign-in. New users → customer. |
 | POST | `/api/auth/local/register` | public (local mode) | `{ name, email, password, company?, placeOfSupply? }` → `{ token }`; password rule enforced |
-| POST | `/api/auth/local/login` | public | `{ email, password }` → `{ token }`; throttled |
+| POST | `/api/auth/local/login` | public | `{ email, password, entry?: "customer" \| "team" }` → `{ token }`; optional entry enforces the trusted profile role server-side; throttled |
 | POST | `/api/auth/local/reset-request` · `/reset` | public | Local-mode reset (link logged server-side) |
 
 ## Generic resources (catalog & master data)

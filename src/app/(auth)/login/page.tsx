@@ -1,51 +1,5 @@
-"use client";
-import Link from "next/link";
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/client/auth";
-import { Button, Field, Input, ErrorNote } from "@/components/ui/primitives";
-import { homeFor } from "@/components/shell/nav";
-import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
+import { LoginPage } from "@/components/auth/LoginForm";
 
-function LoginInner() {
-  const { signIn, user, loading } = useAuth();
-  const router = useRouter();
-  const next = useSearchParams().get("next");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  useEffect(() => { if (!loading && user) router.replace(next && next.startsWith("/") ? next : homeFor(user.role)); }, [loading, user, next, router]);
-  async function go(e: string, p: string, key: string) {
-    setBusy(key); setError(null);
-    try {
-      const s = await signIn(e, p);
-      router.replace(next && next.startsWith("/") ? next : homeFor(s.role));
-    } catch (err) {
-      setError((err as Error).message);
-    } finally { setBusy(null); }
-  }
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-      <p className="mt-1 text-sm text-ink-muted">Sign in to your Brightloop workspace.</p>
-      <div className="mt-8">
-        <GoogleButton onDone={(s) => router.replace(next && next.startsWith("/") ? next : homeFor(s.role))} onError={setError} />
-      </div>
-      <OrDivider />
-      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void go(email, password, "form"); }}>
-        {error && <ErrorNote message={error} />}
-        <Field label="Email" id="email"><Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" /></Field>
-        <Field label="Password" id="password" hint={<Link href="/forgot-password" className="text-brand-600 hover:underline">Forgot password?</Link>}>
-          <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-        </Field>
-        <Button type="submit" className="w-full" size="lg" loading={busy === "form"}>Sign in</Button>
-      </form>
-      <p className="mt-5 text-center text-sm text-ink-muted">New to Brightloop? <Link href="/register" className="font-medium text-brand-600 hover:underline">Create an account</Link></p>
-    </div>
-  );
-}
-
-export default function LoginPage() {
-  return <Suspense><LoginInner /></Suspense>;
+export default function LegacyLoginPage() {
+  return <LoginPage />;
 }

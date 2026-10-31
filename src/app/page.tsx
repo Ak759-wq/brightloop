@@ -32,7 +32,8 @@ export default function Landing() {
               <Link href={dash} className="rounded-full bg-white px-4 py-2 text-sm font-medium text-navy-900 hover:bg-blue-50">Dashboard</Link>
             ) : (
               <>
-                <Link href="/login" className="rounded-full px-4 py-2 text-sm font-medium text-white hover:bg-white/10">Sign in</Link>
+                <Link href="/customer/login" className="rounded-full px-4 py-2 text-sm font-medium text-white hover:bg-white/10">Customer sign in</Link>
+                <Link href="/team/login" className="rounded-full px-4 py-2 text-sm font-medium text-white hover:bg-white/10">Admin / Staff</Link>
                 <Link href="/register" className="rounded-full bg-white px-4 py-2 text-sm font-medium text-navy-900 hover:bg-blue-50">Get started</Link>
               </>
             )}

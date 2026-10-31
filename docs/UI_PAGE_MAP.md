@@ -3,7 +3,7 @@
 Layout: dark navy sidebar + light workspace, sticky top bar (breadcrumbs, mode badges, AI ask box, notification center, user menu). Mobile: off-canvas sidebar.
 
 ## Public
-- `/login` (demo-account buttons) · `/register` (live password checklist) · `/forgot-password` · `/reset-password` (local mode)
+- `/login` (backward-compatible legacy login) · `/customer/login` (customer login) · `/team/login` (admin/staff login) · `/register` (customer registration) · `/forgot-password` · `/reset-password` (local mode)
 
 ## Admin / staff workspace (`/app`) — staff see the starred items only
 | Page | Contents |

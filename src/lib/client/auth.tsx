@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Role } from "@/lib/types";
+import type { AuthEntry } from "@/lib/auth-entry";
 import { api, setTokenGetter } from "./api";
 import { firebaseAuth, firebaseEnabled } from "./firebase";
 
@@ -40,9 +41,9 @@ interface AuthCtx {
   user: SessionInfo | null;
   org: OrgInfo | null;
   modes: Modes | null;
-  signIn: (email: string, password: string) => Promise<SessionInfo>;
+  signIn: (email: string, password: string, entry?: AuthEntry) => Promise<SessionInfo>;
   /** Google sign-in (Firebase mode). New Google users get a customer account; invited staff/admins are linked by email. */
-  signInWithGoogle: () => Promise<SessionInfo>;
+  signInWithGoogle: (entry?: AuthEntry) => Promise<SessionInfo>;
   googleAvailable: boolean;
   signUp: (input: { name: string; email: string; password: string; company?: string; placeOfSupply?: string }) => Promise<SessionInfo>;
   signOut: () => Promise<void>;
@@ -52,6 +53,7 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | null>(null);
 const LS = "brightloop_token";
+const REDIRECT_ENTRY = "brightloop_auth_entry";
 /** While signIn/signUp run their own bootstrap (with the user's details), the auth listener must not race them. */
 let explicitFlow = false;
 const DEMO_EMAILS = ["admin@brightloop.demo", "staff@brightloop.demo", "customer@brightloop.demo"];
@@ -86,11 +88,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let unsub = () => {};
       import("firebase/auth").then(({ onAuthStateChanged }) => {
         unsub = onAuthStateChanged(auth, async (u) => {
+          let redirectEntry: AuthEntry | null = null;
           try {
             let m = await loadMe();
-            if (u && !m.session && !explicitFlow) {
-              await api("/api/auth/bootstrap", { method: "POST", body: {} });
+            redirectEntry = sessionStorage.getItem(REDIRECT_ENTRY) as AuthEntry | null;
+            if (u && !explicitFlow && (!m.session || redirectEntry)) {
+              await api("/api/auth/bootstrap", { method: "POST", body: redirectEntry ? { entry: redirectEntry } : {} });
+              if (redirectEntry) sessionStorage.removeItem(REDIRECT_ENTRY);
               m = await loadMe();
+            }
+          } catch (e) {
+            if (redirectEntry) {
+              sessionStorage.removeItem(REDIRECT_ENTRY);
+              await auth.signOut();
+              setMe(null);
+            } else {
+              throw e;
             }
           } finally {
             setLoading(false);
@@ -115,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     modes: me?.modes ?? null,
     refresh: async () => { await loadMe(); },
     googleAvailable: firebaseEnabled,
-    async signInWithGoogle() {
+    async signInWithGoogle(entry) {
       if (!firebaseEnabled) throw new Error("Google sign-in needs Firebase to be configured");
       explicitFlow = true;
       try {
@@ -129,18 +142,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           displayName = cred.user.displayName;
         } catch (e) {
           const code = (e as { code?: string }).code ?? "";
-          if (code.includes("popup-blocked")) { await signInWithRedirect(auth, provider); throw new Error("Redirecting to Google…"); }
+          if (code.includes("popup-blocked")) {
+            if (entry) sessionStorage.setItem(REDIRECT_ENTRY, entry);
+            await signInWithRedirect(auth, provider);
+            throw new Error("Redirecting to Google…");
+          }
           throw new Error(friendlyFirebaseError(code));
         }
-        let m = await loadMe();
-        if (!m.session) {
-          await api("/api/auth/bootstrap", { method: "POST", body: displayName && displayName.trim().length >= 2 ? { name: displayName.trim().slice(0, 80) } : {} });
-          m = await loadMe();
-        }
+        await api("/api/auth/bootstrap", {
+          method: "POST",
+          body: {
+            ...(displayName && displayName.trim().length >= 2 ? { name: displayName.trim().slice(0, 80) } : {}),
+            ...(entry ? { entry } : {}),
+          },
+        });
+        const m = await loadMe();
         return requireSession(m);
       } finally { explicitFlow = false; }
     },
-    async signIn(email, password) {
+    async signIn(email, password, entry) {
       email = email.trim().toLowerCase();
       if (firebaseEnabled) {
         explicitFlow = true;
@@ -157,12 +177,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             catch (e2) { throw new Error(friendlyFirebaseError((e2 as { code?: string }).code ?? "")); }
           } else throw new Error(friendlyFirebaseError(code));
         }
-        let m = await loadMe();
-        if (!m.session) { await api("/api/auth/bootstrap", { method: "POST", body: {} }); m = await loadMe(); }
+        await api("/api/auth/bootstrap", { method: "POST", body: entry ? { entry } : {} });
+        const m = await loadMe();
         return requireSession(m);
         } finally { explicitFlow = false; }
       }
-      const { token } = await api<{ token: string }>("/api/auth/local/login", { body: { email, password } });
+      const { token } = await api<{ token: string }>("/api/auth/local/login", { body: { email, password, ...(entry ? { entry } : {}) } });
       localStorage.setItem(LS, token);
       return requireSession(await loadMe());
     },
