@@ -132,6 +132,8 @@ Built with Indian GST requirements in mind.
 
 Invoice email delivery can be connected through Resend. Without an email provider, sending is recorded as an in-app notification rather than an actual email.
 
+When Resend is unavailable or returns an error, Brightloop labels the notification as unavailable and does not mark the invoice as emailed. Set `RESEND_API_KEY` and `EMAIL_FROM` only in the server/Vercel environment; keys are never sent to the browser.
+
 ### 8. Payment Management
 
 - Record payments against invoices.
@@ -143,6 +145,10 @@ Invoice email delivery can be connected through Resend. Without an email provide
 - Maintain payment history.
 
 **Payment integration status:** Brightloop includes a Payment Simulator and a Razorpay adapter with webhook signature verification. The simulator does not process real money. Live Razorpay transactions require production credentials and configuration.
+
+### Production data configuration
+
+Hosted deployments require `FIREBASE_SERVICE_ACCOUNT_JSON` and a matching `NEXT_PUBLIC_FIREBASE_PROJECT_ID`. If the service account is missing, invalid or belongs to another Firebase project, the API returns a diagnostic and does not silently use the ephemeral local JSON store. Local development may still use the local store when Vercel is not set.
 
 ### 9. Customer Self-Service Portal
 

@@ -4,7 +4,7 @@ Audited against the *Subscription Management System* problem statement by readin
 
 **Status scale:** Fully implemented and tested · Implemented, not tested · Partial · UI only · Missing · Broken
 **Data layer:** Firebase Auth + Cloud Firestore (not Supabase). "RLS" below means Firestore security rules plus server-side role checks.
-**Automated tests:** 132 passing (Vitest) — finance engine, billing engine integration, assistant BYO key, webhook signature.
+**Automated tests:** 142 passing (Vitest) — finance engine, billing engine integration, quotation expiry, invoice delivery status, assistant BYO key, webhook signature.
 
 ## Step 1–2 · Problem-statement requirements
 
@@ -24,18 +24,18 @@ Audited against the *Subscription Management System* problem statement by readin
 | 12 | Minimum quantity | Fully implemented and tested | unit P-08, smoke min-qty rejection |
 | 13 | Plan availability dates | Fully implemented and tested | unit + server validation on subscribe |
 | 14 | Auto-close & early cancellation | Fully implemented and tested | unit B-05/B-06/L-03, runner auto-close |
-| 15 | Quotation templates | Implemented, not tested | Quotations page; template validity blocks confirm after expiry. No automated test yet |
+| 15 | Quotation templates | Fully implemented and tested | Quotations page; server-side validity check blocks confirmation after expiry, including client-date bypass attempts |
 | 16 | Subscription lifecycle Draft→Quotation→Confirmed→Active→Closed | Fully implemented and tested | unit L-*, stepper UI |
 | 17 | Automatic invoice generation | Fully implemented and tested | billing runner `/api/billing/run` (daily Vercel Cron), integration tests |
 | 18 | Tax calculation (CGST+SGST / IGST) | Fully implemented and tested | `tests/finance/tax-invoice.test.ts` |
-| 19 | Invoice confirm / cancel / send / print | Fully implemented and tested (send = logged notification) | invoice actions + print CSS/PDF; "send" records a notification, no SMTP |
+| 19 | Invoice confirm / cancel / send / print | Fully implemented and tested | invoice actions + print CSS/PDF; Resend is used when configured, otherwise the UI clearly records an in-app notification and does not set `sentAt` |
 | 20 | Discounts (admin-only, fixed/percent) | Fully implemented and tested | unit C-*; staff → 403 |
 | 21 | Discount validity & usage limits | Fully implemented and tested | unit C-06/C-08/C-09 |
 | 22 | Payment recording | Fully implemented and tested | partial + overpayment guard tests |
 | 23 | Outstanding & overdue | Fully implemented and tested | unit Y-03, runner marks overdue |
 | 24 | Financial analytics (MRR, ARR, NRR, churn, ageing) | Fully implemented and tested | `tests/finance/payments-metrics.test.ts`; live admin overview loaded |
 | 25 | Search & filtering | Implemented, not tested | list pages filter server-side with Firestore indexes (86 deployed); no automated UI tests |
-| 26 | Performance (thousands of subscriptions) | Partial | paginated queries + composite indexes; `/api/admin/seed?bulk=3000` exists, but no load test was run on production |
+| 26 | Performance (thousands of subscriptions) | Partial | paginated queries + composite indexes; local integration covers 300 seeded subscriptions, but no hosted Firestore load test was run |
 
 ## Step 3 · Financial logic (expected vs actual)
 
@@ -83,11 +83,11 @@ See [UI_AUDIT.md](UI_AUDIT.md) for 20 page-level fixes. This round: blue aurora 
 | Firestore rules | Deployed, not emulator-tested | Rules unverified by tests | P2 | Add `@firebase/rules-unit-testing` suite |
 | Browser e2e | Missing | No Playwright coverage | P2 | Add login → subscribe → pay flow |
 | Payments | Simulator | No real money movement | P2 | Add Razorpay live keys |
-| Invoice email | Logged notification | No SMTP | P3 | Plug in Resend/SMTP |
+| Invoice email | Resend-ready | Resend is used when configured; otherwise delivery is explicitly unavailable and only an in-app notification is recorded | P3 | Configure `RESEND_API_KEY` and `EMAIL_FROM` in Vercel |
 | Performance | Partial | No production load test | P3 | Run bulk seed + measure list latency |
 | Unused service-account keys | Open | 3 spare keys in GCP | P2 | Delete in IAM console |
 
 No P0 (critical functionality or security) issues were found.
 
 ## Remaining limitations
-Razorpay simulator, logged email, no Firestore-emulator or browser e2e tests, dunning can't charge stored payment methods, password reset not automatically tested, no production load test.
+Razorpay simulator, no Firestore-emulator or browser e2e tests, dunning can't charge stored payment methods, password reset not automatically tested, no hosted production load test. Vercel now reports a database configuration diagnostic and refuses local JSON fallback when `FIREBASE_SERVICE_ACCOUNT_JSON` is missing or invalid.

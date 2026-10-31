@@ -193,7 +193,7 @@ export async function sendInvoice(ctx: Ctx, id: string) {
   const inv = await getInvoice(ctx, id);
   if (inv.status === "draft" || inv.status === "cancelled") throw new DomainError("Confirm the invoice before sending it");
   let channel: "email_sent" | "email_logged" = "email_logged";
-  let detail = "Email provider not configured – the send was logged as a notification for the customer.";
+  let detail = "Email delivery is unavailable because RESEND_API_KEY is not configured. An in-app notification was recorded instead.";
   if (process.env.RESEND_API_KEY) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -206,10 +206,20 @@ export async function sendInvoice(ctx: Ctx, id: string) {
       }),
     });
     if (res.ok) { channel = "email_sent"; detail = `Emailed to ${inv.customer.email}`; }
-    else detail = `Email provider error (${res.status}); logged instead.`;
+    else detail = `Email provider error (${res.status}); email was not sent. An in-app notification was recorded instead.`;
   }
-  await ctx.store.update("invoices", id, { sentAt: nowISO(), updatedAt: nowISO() });
-  await notify(ctx, { audience: "customer", customerId: inv.customerId, title: `Invoice ${inv.number}`, body: `Your invoice for ₹${(inv.totals.total / 100).toLocaleString("en-IN")} is due ${inv.dueDate}.`, level: "info", link: `/portal/invoices/${id}`, channel });
+  await ctx.store.update("invoices", id, { ...(channel === "email_sent" ? { sentAt: nowISO() } : {}), updatedAt: nowISO() });
+  await notify(ctx, {
+    audience: "customer",
+    customerId: inv.customerId,
+    title: `Invoice ${inv.number}`,
+    body: channel === "email_sent"
+      ? `Your invoice for ₹${(inv.totals.total / 100).toLocaleString("en-IN")} is due ${inv.dueDate}.`
+      : `${detail}`,
+    level: channel === "email_sent" ? "info" : "warning",
+    link: `/portal/invoices/${id}`,
+    channel,
+  });
   await audit(ctx, "invoice.sent", "invoices", id, { note: detail });
   return { channel, detail };
 }
