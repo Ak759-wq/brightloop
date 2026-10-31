@@ -151,14 +151,14 @@ export function MeadowHero({ signedIn, dashboardHref }: { signedIn: boolean; das
       className="relative isolate flex min-h-[640px] flex-col overflow-hidden rounded-b-[2rem] lg:h-[min(94vh,880px)]"
       style={{ background: "radial-gradient(120% 70% at 50% 38%, #fbf3f6 0%, #f3dde7 45%, #e6c0d1 100%)" }}
     >
-      <div className="relative z-30 mx-auto mt-[12vh] max-w-3xl px-6 text-center sm:mt-[13vh]">
+      <div className="relative z-30 mx-auto mt-[11vh] max-w-5xl px-6 text-center sm:mt-[13vh]">
         <svg className="mx-auto mb-6 h-5 w-5 animate-[lml-twinkle_3.2s_ease-in-out_infinite]" viewBox="-12 -12 24 24" aria-hidden>
           <path d="M0-11C1 -3 3-1 11 0 3 1 1 3 0 11-1 3-3 1-11 0-3-1-1-3 0-11Z" fill={ROSE.deep} />
         </svg>
         <h1 className="text-[clamp(2.6rem,7.2vw,5.6rem)] font-medium leading-[1.02] tracking-[-0.035em]" style={{ color: ROSE.deep }}>
           Revenue in<br className="sm:hidden" /> Full Bloom
         </h1>
-        <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed sm:text-base" style={{ color: "#6b4a5c" }}>
+        <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed sm:text-base" style={{ color: "#5a3a4c", textShadow: "0 0 18px #fbf3f6, 0 0 6px #fbf3f6" }}>
           Plans, subscriptions, GST invoices and payments that quietly grow while you sleep. Billing runs itself; your MRR does the rest.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
@@ -174,7 +174,7 @@ export function MeadowHero({ signedIn, dashboardHref }: { signedIn: boolean; das
       </div>
 
       {/* meadow */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] min-h-[300px]">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[44%] min-h-[260px]">
         <canvas ref={back} className="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-700 data-[ready='1']:opacity-100" />
         <Coin tilt={1} className="lml-coin absolute left-[11%] top-[24%] w-[clamp(90px,13vw,170px)] drop-shadow-[0_18px_24px_rgba(58,13,34,0.35)]" style={{ transform: "rotate(-14deg)" }} />
         <Coin tilt={-1} className="lml-coin lml-coin-2 absolute right-[10%] top-[22%] w-[clamp(70px,10vw,130px)] drop-shadow-[0_18px_24px_rgba(58,13,34,0.3)]" style={{ transform: "rotate(16deg)" }} />
