@@ -66,7 +66,10 @@ function friendlyFirebaseError(code: string): string {
   if (code.includes("weak-password")) return "Password is too weak";
   if (code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request")) return "Google sign-in was cancelled";
   if (code.includes("account-exists-with-different-credential")) return "This email already has a password login. Sign in with your password instead.";
-  if (code.includes("unauthorized-domain")) return "Google sign-in isn't enabled for this domain yet";
+  if (code.includes("unauthorized-domain")) {
+    const domain = typeof window !== "undefined" ? window.location.hostname : "this domain";
+    return `Google sign-in isn't enabled for ${domain}. Add this hostname to Firebase Authentication → Settings → Authorized domains.`;
+  }
   if (code.includes("operation-not-allowed")) return "Google sign-in isn't enabled for this workspace yet";
   return "Sign-in failed. Please try again.";
 }
